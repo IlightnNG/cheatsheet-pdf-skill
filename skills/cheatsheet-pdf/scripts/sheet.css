@@ -1,0 +1,241 @@
+/* sheet.css - the single stylesheet for a one-page A4 cheat sheet.
+   A4 landscape, multi-column. Section priority is coded by COLOUR only (h2.p0-p3); SIZE codes
+   the importance of a FORMULA box ($$! / $$ / $$?), never the priority of a section.
+
+   FIT KNOBS (the only two you normally touch; cheatsheet.js exposes both as flags)
+     .page  font-size          base prose size in pt          --base=
+     .flow  column-count       how many columns              --cols=
+            column-gap         gutter, in mm                  --gap=
+
+   Everything else is expressed in em, so one number moves the whole sheet.
+   Math size is set per context further down - see "Math sizing" below. */
+
+@page { size: A4 landscape; margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; }
+
+.page {
+  width: 297mm;
+  height: 210mm;
+  padding: 3.0mm 3.0mm 3.2mm 3.0mm;
+  font-family: "Cambria", "Georgia", "Times New Roman", serif;
+  font-size: 5.5pt;
+  line-height: 1.05;
+  color: #111;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* ---------------- header ---------------- */
+.hdr {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3mm;
+  border-bottom: 1.2pt solid #1a3a6b;
+  padding-bottom: 0.7mm;
+  margin-bottom: 1.2mm;
+  flex: 0 0 auto;
+}
+.hdr h1 {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 1.75em;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  color: #1a3a6b;
+  letter-spacing: 0.2px;
+  /* A long TITLE must not squeeze the right-hand note into wrapping: that is exactly what a long
+     subtitle used to do, and it cost 5.3mm of column height on a real sheet. The title shrinks
+     and wraps instead, and .meta holds its natural width. */
+  min-width: 0;
+}
+.hdr h1 .sub { font-size: 0.62em; font-weight: 400; color: #4a6a9b; }
+.hdr .meta {
+  flex: 0 0 auto;
+  max-width: 55%;
+  font-size: 0.95em;
+  color: #333;
+  font-family: "Segoe UI", Arial, sans-serif;
+  text-align: right;
+  line-height: 1.25;
+}
+.hdr .meta .k { color: #c07000; font-weight: 700; }
+.pk3 { color: #b02020; } .pk2 { color: #0d6b3a; }
+.pk1 { color: #5a6a7a; } .pk0 { color: #c3c9cf; }
+
+/* ---------------- column flow ---------------- */
+.grid { flex: 1 1 auto; min-height: 0; display: flex; }
+/* min-width:0 is ESSENTIAL. As a flex item .flow defaults to min-width:auto, so it refuses
+   to shrink below its min-content width. An unbreakable formula makes that min-content
+   width huge, and Chrome then widens the whole multicol container past the page - the flow
+   went to 11797px (84 columns) and every box was clipped. With min-width:0 the item stays
+   at the page width and the formulas wrap at their <wbr> points instead. */
+.flow { flex: 1 1 auto; min-width: 0; column-count: 6; column-gap: 1.9mm; column-fill: auto; }
+
+/* ---------------- headings ---------------- */
+/* chapter bars. The document title in .hdr has its own rule below and keeps no fill. */
+h1:not(.hdr h1) {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 1.34em;
+  color: #fff;
+  background: #14294a;
+  margin: 0 0 0.8mm 0;
+  padding: 0.45mm 1.1mm;
+  border-radius: 0.6mm;
+  break-after: avoid;
+}
+h2 {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 1.16em;
+  margin: 1.4mm 0 0.45mm 0;
+  padding: 0.3mm 1.0mm;
+  border-radius: 0.6mm;
+  break-after: avoid;
+  break-inside: avoid;
+}
+h2.p3 { color: #fff; background: #b02020; }
+h2.p2 { color: #fff; background: #0d6b3a; }
+h2.p1 { color: #fff; background: #5a6a7a; }
+h2.p0 { color: #444; background: #e2e6ea; }
+
+h3 {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 1.02em;
+  color: #a02020;
+  margin: 0.9mm 0 0.25mm 0;
+  border-bottom: 0.4pt solid #e0c0c0;
+  break-after: avoid;
+}
+
+/* ---------------- priority-scaled text ---------------- */
+p { margin: 0.26mm 0; }
+.ul { margin: 0.18mm 0 0.35mm 0; }
+.li { margin: 0.1mm 0 0.1mm 1.3mm; text-indent: -1.3mm; }
+.li::before { content: "\00b7 "; color: #1a3a6b; font-weight: 700; }
+/* Numbered lists: md2body emits ".ul ol" for "1. ...", but the marker above is a fixed middot,
+   so numbered steps printed as identical bullets. A counter restores the numbers. */
+.ul.ol { counter-reset: olc; }
+.ul.ol .li { margin-left: 1.8mm; text-indent: -1.8mm; }
+.ul.ol .li::before { counter-increment: olc; content: counter(olc) ". "; }
+
+.q {
+  margin: 0.35mm 0 0.45mm 0;
+  padding-left: 1.1mm;
+  border-left: 0.9pt solid #c07000;
+  background: #fffaf0;
+  font-size: 0.95em;
+}
+.q p { margin: 0.08mm 0; }
+
+/* ---------------- formula importance levels ----------------
+   .fxc  core / memorise verbatim   (pink, red border, larger)
+   .fxd  standard formula           (blue, navy border)
+   .fxs  supporting / skim          (grey, no accent) */
+.fxd, .fxc, .fxs {
+  display: block;
+  margin: 0.26mm 0;
+  padding: 0.22mm 0.45mm;
+  overflow-wrap: break-word;
+  break-inside: avoid;
+}
+.fxd { background: #eef3fb; border-left: 1.3pt solid #1a3a6b; }
+.fxc { background: #fdeaea; border-left: 1.7pt solid #b02020; font-size: 1.09em; font-weight: 600; padding: 0.32mm 0.55mm; }
+.fxs { background: #f6f7f8; border-left: 0.8pt solid #c3c9cf; color: #444; font-size: 0.95em; }
+
+/* math primitives. This file used to carry a hand-rolled set - .fr fractions, .bg big operators,
+   .op/.tx/.cal/.bb text styles, .sq/.sqb radicals, .bx boxes, .acc-* accents, .xarr arrows,
+   .ubr under-braces, .fxi inlines - for a Markdown-to-math renderer that no longer exists.
+   Nothing in the pipeline emits those class names (verified by grepping every script for
+   class="..."), so the rules were removed rather than left to puzzle the next reader. If such a
+   class is ever emitted again, add its rule back with it. KaTeX owns all other math styling. */
+sup { font-size: 0.68em; vertical-align: 0.42em; line-height: 0; }
+sub { font-size: 0.68em; vertical-align: -0.2em; line-height: 0; }
+.unk { color: #c00; background: #ffe0e0; }
+code { font-family: Consolas, monospace; font-size: 0.92em; background: #eef1f5; padding: 0 0.25mm; }
+
+.zh { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
+
+/* ---------------- tables ---------------- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92em;
+  margin: 0.26mm 0 0.42mm 0;
+  table-layout: fixed;
+  break-inside: avoid;
+}
+th, td {
+  border: 0.35pt solid #b9c6d8;
+  padding: 0.1mm 0.35mm;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+th { background: #e8eef7; color: #1a3a6b; font-family: "Segoe UI", Arial, sans-serif; }
+
+/* ---------------- legend ---------------- */
+.legend {
+  flex: 0 0 auto;
+  font-size: 0.9em;
+  color: #555;
+  font-family: "Segoe UI", Arial, sans-serif;
+  text-align: right;
+  border-top: 0.4pt solid #ccc;
+  padding-top: 0.35mm;
+  margin-top: 0.5mm;
+}
+.legend b { color: #a02020; }
+
+/* ---------------- KaTeX integration ----------------
+   KaTeX ships its own math font (inlined as data: URIs in vendor/katex-fonts.css).
+
+   DO NOT override white-space on .katex or .katex .base. KaTeX sizes its base with
+   `width: min-content` AND relies on `white-space: nowrap`; forcing `normal` makes the
+   inline-block collapse/expand unpredictably and the flow blows out horizontally
+   (measured: 6 columns -> 21, scrollWidth 1023mm for a 291mm box).
+
+   A formula is therefore ATOMIC. Keep formulas short enough for one column; the build
+   shrinks any that are still too wide with a per-formula scale-to-fit transform. */
+.flow .katex-display { margin: 0; }
+/* KaTeX uses line-height 1.2; in a dense sheet that wastes a lot of vertical space */
+.flow .katex { line-height: 1.0; }
+.fxd, .fxc, .fxs { line-height: 1.05; }
+.fxd .katex, .fxc .katex, .fxs .katex { vertical-align: baseline; }
+
+/* Formula line breaking (see splitFormula in build.js).
+   A KaTeX render is split into atomic .fxseg pieces (inline-block + nowrap), so the browser
+   can never re-break inside a piece. paginate.js then measures the pieces and writes the
+   line breaks back as explicit .fline blocks: it keeps a whole formula together and lets a
+   trailing annotation share the previous line only when it fits. Never rely on the
+   browser's greedy filler for this - it starts formulas it cannot finish. */
+.fline { display: block; }
+.fxseg { display: inline-block; white-space: nowrap; }
+
+/* priority sizing lives on the box */
+/* Math sizing. KaTeX renders at 1.21em by default, which is far too large for a narrow
+   column. Set the size as an ABSOLUTE target per context and divide out each box's own
+   font-size (.fxc 1.09em, .fxd 1.0em, .fxs 0.95em).
+   NEVER stack a shared ratio on the box font-size: that is what once made the grey
+   supporting box the smallest math on the sheet - 0.95 x 0.60 = 0.57em against 0.85em for
+   inline math in prose, i.e. supporting formulas less legible than the running text.
+   Target hierarchy here (x INLINE math in prose, which is the 0.85em reference, not the 5.5pt
+   body text): core 1.19 > standard 1.09 > supporting 1.04 > inline 1.00. */
+.fxd .katex { font-size: 0.9300em; }   /* 0.9300 x 1.00 = 0.930 of prose-adjusted text */
+.fxc .katex { font-size: 0.9265em; }   /* 0.9265 x 1.09 = 1.010 */
+.fxs .katex { font-size: 0.9260em; }   /* 0.9260 x 0.95 = 0.880 */
+/* inline math in running text must be stated too, or KaTeX's 1.21em default applies and
+   prose math ends up LARGER than the boxed formulas.
+   The list marker matters: md2body emits list items as <div class="li">, not <li>, so a rule
+   written for `li` misses them and their math silently renders at KaTeX's 1.21em default -
+   measured at 9.68pt against 6.80pt for the same math in a paragraph (base 8). */
+.flow p .katex, .flow .li .katex, .flow li .katex, .flow td .katex, .flow th .katex,
+.flow blockquote .katex { font-size: 0.85em; }
+
+/* fit-formulas.js scales a too-wide formula with an inline transform + an overflow-hidden
+   wrapper; there used to be .kfit / .kfit-box classes for this, and nothing emitted them. */

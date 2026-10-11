@@ -1,0 +1,9 @@
+/* A4 portrait overlay - use with:  --css=examples/portrait.css
+ *
+ * Everything visual lives in sheet.css; this file only overrides what portrait changes. Passing it
+ * with --css appends it on top, so nothing in sheet.css is edited or forked.
+ *
+ * Two rules are needed: @page sets the PDF box, .page sets the layout box. Change both.
+ */
+@page { size: A4 portrait; }
+.page { width: 210mm; height: 297mm; }

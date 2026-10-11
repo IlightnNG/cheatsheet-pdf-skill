@@ -1,0 +1,26 @@
+# ── generated intermediates ───────────────────────────────────────────────────────────────
+# cheatsheet.js writes body.html / sheet.html / preview.png / meta.json here.
+.cheatsheet/
+
+# ── node ─────────────────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ── scratch files ────────────────────────────────────────────────────────────────────────
+# Convention: anything named _* is a throwaway (a one-off codemod, a probe, a debug crop).
+_*
+
+# ── os / editor ──────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# -- internal working docs (not part of the shipped skill) --
+# The build plan and the optimization log stay local; the repository is the product.
+REFACTOR_PLAN.md
+# No licence file is published yet: the local LICENSE still carries a placeholder holder.
+LICENSE

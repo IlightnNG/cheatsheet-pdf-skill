@@ -1,0 +1,6 @@
+# Line endings: the scripts, stylesheet and docs are edited on Windows and run on macOS/Linux
+# too, so normalise to LF and keep binaries untouched. Without this, every Windows checkout
+# rewrites the whole tree to CRLF and the next diff is unreadable.
+* text=auto eol=lf
+*.png binary
+*.pdf binary

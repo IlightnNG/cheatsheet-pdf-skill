@@ -1,0 +1,22 @@
+{
+  "name": "cheatsheet-pdf",
+  "version": "0.1.0",
+  "description": "Render a Markdown cheat sheet into a dense A4 PDF sheet of one or more pages.",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "cheatsheet-pdf": "skills/cheatsheet-pdf/scripts/cheatsheet.js"
+  },
+  "scripts": {
+    "demo": "node skills/cheatsheet-pdf/scripts/cheatsheet.js examples/demo.md examples/demo.pdf --cols=2 --base=8 --pages=1",
+    "demo:portrait": "node skills/cheatsheet-pdf/scripts/cheatsheet.js examples/demo.md examples/demo-portrait.pdf --css=examples/portrait.css --cols=2 --base=6 --pages=1",
+    "demo:2p": "node skills/cheatsheet-pdf/scripts/cheatsheet.js examples/demo.md examples/demo-2p.pdf --cols=2 --base=8 --pages=2",
+    "verify": "node skills/cheatsheet-pdf/scripts/verify.js examples/demo.pdf",
+    "verify:portrait": "node skills/cheatsheet-pdf/scripts/verify.js examples/demo-portrait.pdf",
+    "verify:2p": "node skills/cheatsheet-pdf/scripts/verify.js examples/demo-2p.pdf",
+    "test": "npm run demo && npm run verify && npm run demo:portrait && npm run verify:portrait && npm run demo:2p && npm run verify:2p"
+  }
+}
