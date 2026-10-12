@@ -122,9 +122,8 @@ if (pgm && pgm.pages > 1) {
   console.log('ADVICE: a block is wider than its column (OVER=' + over + 'px) even after fitting. ' +
               'Shorten that formula in the Markdown.');
 } else if (used < cols - 0.25) {
-  // Threshold: a last column filled to about three quarters is good enough, so anything below
-  // that is worth one more pass. A looser half-column threshold reported "good fit" for a sheet
-  // whose last column was only 58% full.
+  // Threshold: a last column filled to about three quarters reads as full (measured: an 80% last
+  // column does, a 58% one does not), so anything below it is worth one more pass.
   // Widening the columns does not change how many lines a formula-heavy sheet needs, so the fill
   // becomes used/cols'. The best integer choice is therefore the smallest cols' that still fits:
   // ceil(used/0.95). For prose this does nothing (narrower columns reflow into more lines), so it

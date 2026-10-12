@@ -48,15 +48,14 @@ const meta = {
 // with no star run, a dropped authoring-aid section - cannot pass unnoticed.
 const notes = [];
 
-// ---- drop the front matter and any authoring aid that is not sheet content ----
+// ---- drop the front matter and any section that is not sheet content ----
 md = afterTitle.slice(quoteText.length);
-// "## Rating overview" is an authoring aid: the rating work belongs in the "Meta:" line and in
-// the star runs, and an overview of it just spends page area. Dropping it silently looked like
-// content loss, so it is announced instead.
+// A section that records the authoring process instead of the subject is not sheet content. It is
+// announced rather than dropped in silence, so it cannot look like content loss.
 const aid = /##\s*Rating overview[\s\S]*?(?=\n#\s|$)/.exec(md);
 if (aid) {
   md = md.replace(aid[0], '');
-  notes.push('dropped "## Rating overview" - authoring aid, not printed; put the rating basis in the "Meta:" line');
+  notes.push('dropped "## Rating overview" - it records the authoring process, not the subject');
 }
 
 // ---- inline markdown, applied ONLY outside math ----

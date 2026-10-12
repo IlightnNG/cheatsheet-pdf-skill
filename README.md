@@ -69,7 +69,6 @@ The conventions are carried by
 | `$$?formula$$` | supporting formula — grey box, smallest math |
 | `$x$` | inline math |
 | `*Pf.* …` / `*Meaning:* …` / `> **Trap.** …` | proof sketch / exam sentence / warning box |
-| `## Rating overview` | **not printed** — an authoring aid (like a coverage list); it is dropped, with a notice on the console |
 
 **Keep the teaching order.** Do not reorder by importance; the star ratings carry the priority
 signal. Rate topics by evidence — how often they appear in past papers and how many marks they

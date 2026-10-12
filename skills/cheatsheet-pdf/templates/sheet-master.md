@@ -40,8 +40,6 @@ Self-check before rendering - every box must be ticked:
   [ ] every section heading carries a star run
   [ ] Meta / Footer lines exist; the header band is ONE line (title + a short right-hand note -
       never a topic list: it wraps the note, grows the band and costs column height)
-  [ ] no authoring-aid section ("## Rating overview" is dropped, not printed - the rating basis
-      belongs in the Meta line and in the star runs)
   [ ] every formula fits inside ONE column; split at an "=" if it does not
   [ ] no \| inside a table row (use \mid or \lVert)
   [ ] math stars are superscripts (A^*), never emphasis

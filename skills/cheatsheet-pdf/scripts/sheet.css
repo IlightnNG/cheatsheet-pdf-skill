@@ -148,12 +148,8 @@ p { margin: 0.26mm 0; }
 .fxc { background: #fdeaea; border-left: 1.7pt solid #b02020; font-size: 1.09em; font-weight: 600; padding: 0.32mm 0.55mm; }
 .fxs { background: #f6f7f8; border-left: 0.8pt solid #c3c9cf; color: #444; font-size: 0.95em; }
 
-/* math primitives. This file used to carry a hand-rolled set - .fr fractions, .bg big operators,
-   .op/.tx/.cal/.bb text styles, .sq/.sqb radicals, .bx boxes, .acc-* accents, .xarr arrows,
-   .ubr under-braces, .fxi inlines - for a Markdown-to-math renderer that no longer exists.
-   Nothing in the pipeline emits those class names (verified by grepping every script for
-   class="..."), so the rules were removed rather than left to puzzle the next reader. If such a
-   class is ever emitted again, add its rule back with it. KaTeX owns all other math styling. */
+/* Math primitives. KaTeX owns the math styling; what follows is the few plain-HTML rules the
+   Markdown can still reach. */
 sup { font-size: 0.68em; vertical-align: 0.42em; line-height: 0; }
 sub { font-size: 0.68em; vertical-align: -0.2em; line-height: 0; }
 .unk { color: #c00; background: #ffe0e0; }
@@ -237,5 +233,5 @@ th { background: #e8eef7; color: #1a3a6b; font-family: "Segoe UI", Arial, sans-s
 .flow p .katex, .flow .li .katex, .flow li .katex, .flow td .katex, .flow th .katex,
 .flow blockquote .katex { font-size: 0.85em; }
 
-/* fit-formulas.js scales a too-wide formula with an inline transform + an overflow-hidden
-   wrapper; there used to be .kfit / .kfit-box classes for this, and nothing emitted them. */
+/* fit-formulas.js scales a too-wide formula with an inline transform inside an overflow-hidden
+   wrapper. */

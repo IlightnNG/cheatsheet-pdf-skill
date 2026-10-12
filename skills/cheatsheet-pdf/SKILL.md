@@ -28,9 +28,8 @@ summaries, slide decks, or anything that must stay prose.
 ## Stage A — author the Markdown
 
 Copy `skills/cheatsheet-pdf/templates/sheet-master.md` and fill it in; it carries the format
-conventions, so do not invent a different layout. Every line below is one module with one job;
-anything that records your *process* rather than the subject — a rating overview, a coverage
-checklist — is an authoring aid and does not print.
+conventions, so do not invent a different layout. Every line below is one module with one job:
+write the subject, never a record of how you chose it.
 
 | Write | Renders as |
 |---|---|
@@ -49,7 +48,6 @@ checklist — is an authoring aid and does not print.
 | `> **Trap.** …` | warning box |
 | `- item` / `1. item` | bullet list / numbered list |
 | `\| a \| b \|` | table — 0.92 em, cannot split across a column |
-| `## Rating overview` | **not printed** — authoring aid; the rating work belongs in `**Meta:**` and the stars |
 
 ### Choosing what goes in
 
