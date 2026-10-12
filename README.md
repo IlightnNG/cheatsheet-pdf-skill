@@ -1,10 +1,13 @@
-# cheatsheet-pdf
+# cheatsheet-pdf-skill
 
-Turn a body of course material into **one dense A4 page** of formulas — as a PDF you can print
-and bring to an exam.
+**An agent skill that turns a body of course material into one dense A4 cheat sheet** — a PDF you
+print and bring to an exam.
 
-You write (or an AI writes) a Markdown cheat sheet; one command renders it into a single-page A4
-landscape PDF with real LaTeX typesetting, verifying that nothing overflowed or got clipped.
+You write (or an AI writes) a Markdown cheat sheet; one command renders it to A4 landscape with real
+LaTeX typesetting — one page or two, two by default — and verifies that nothing overflowed or was
+clipped.
+
+The skill directory, npm package and CLI keep the shorter name `cheatsheet-pdf`.
 
 ![demo sheet](examples/demo.png)
 
