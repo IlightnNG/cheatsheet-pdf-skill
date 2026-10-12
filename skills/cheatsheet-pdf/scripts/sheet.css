@@ -50,9 +50,9 @@ html, body { margin: 0; padding: 0; background: #fff; }
   border-radius: 0;
   color: #1a3a6b;
   letter-spacing: 0.2px;
-  /* A long TITLE must not squeeze the right-hand note into wrapping: that is exactly what a long
-     subtitle used to do, and it cost 5.3mm of column height on a real sheet. The title shrinks
-     and wraps instead, and .meta holds its natural width. */
+  /* A long TITLE must not squeeze the right-hand note into wrapping: that is what costs column
+     height (measured: 5.3mm on a real sheet). The title shrinks and wraps instead, and .meta
+     holds its natural width. */
   min-width: 0;
 }
 .hdr h1 .sub { font-size: 0.62em; font-weight: 400; color: #4a6a9b; }

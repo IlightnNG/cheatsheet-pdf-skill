@@ -134,8 +134,8 @@ for (let raw of lines) {
   if ((m = /^##\s+(.*)$/.exec(line))) {
     closeTable(); closeQuote(); closeList();
     const t = m[1];
-    // A section with no star run used to fall through to p1 (grey "in scope") in silence; the
-    // star run IS the priority signal, so say so when it is missing.
+      // The star run IS the priority signal, so a section that has none is reported rather than
+      // silently defaulting to p1 (grey "in scope").
     if (!/[★☆]/.test(t)) {
       notes.push('section without a star run, so it prints as p1 (grey "in scope"): "' +
                  cleanHead(t).slice(0, 48) + '"');
