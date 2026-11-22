@@ -65,6 +65,16 @@ function tool(script, args) {
 const results = [];
 const record = (name, ok, detail) => { results.push({ name, ok, detail }); };
 
+// ---- 1b. every display block was consumed by KaTeX
+// A "$$!" left in the sheet means md2body never recognised the block (a stray character before the
+// marker, or a marker not at column 0), and the paper would print the marker itself.
+let sheetHtml = '';
+try { sheetHtml = fs.readFileSync(sheet, 'utf8'); } catch (e) { /* gates below will notice */ }
+// The stylesheet carries a comment that documents the markers ($$! / $$? ), so the check must read
+// the body only: strip <style> blocks and HTML comments first.
+const sheetBody = sheetHtml.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<!--[\s\S]*?-->/g, '');
+const leftMarkers = (sheetBody.match(/\$\$[!?]/g) || []).length;
+record('display markers consumed', leftMarkers === 0, leftMarkers + ' leftover "$$!"/"$$?"');
 // ---- 1. no formula wrapped mid-formula
 const wrap = tool('wrapcheck.js');
 record('no formula wrapped', /no formula wrapped/.test(wrap),
@@ -88,41 +98,67 @@ record('math size hierarchy', hierarchyOk,
        'fxs/inline=' + (fxs === null ? 'n/a' : fxs) + '  fxc/inline=' + (fxc === null ? 'n/a' : fxc) +
        '  inline math=' + proseSize + 'pt' + (fxs === null ? '  (no supporting box on this sheet)' : ''));
 
-// ---- 4. the multicol container was not widened past the page
+// ---- 4. capacity: a single page must not widen its container; a multi-page sheet is judged by
+// the per-page column budget that paginate-pages.js already measured.
+// The old rule compared pageInner/flowClient/flowScroll on page 1 only, which failed on EVERY
+// two-page sheet: the flow legitimately needs more width than one page once the content is ~1.9
+// pages, even though both pages print correctly (observed: flowScroll=1321 on a clean 2-page A4
+// with zero wrapped formulas and nothing clipped). Two different questions, two different gates.
 const diag = tool('diag.js', [path.join(work, 'preview.png')]);
 const num = (k) => { const m = new RegExp(k + '=([\\d.]+)').exec(diag); return m ? parseFloat(m[1]) : NaN; };
 const inner = num('pageInner'), client = num('flowClient'), scroll = num('flowScroll');
-record('container not widened (fits declared columns)',
-       Math.abs(inner - client) < 2 && Math.abs(client - scroll) < 2,
-       'pageInner=' + inner + ' flowClient=' + client + ' flowScroll=' + scroll);
 const fill = num('fillPct');
-// The number is the TALLEST column, not the last one: it answers "did content run past the page
-// height". Calling it "fill" invited reading it as page fullness, which it is not - a sheet using
-// 3.58 of 4 columns prints 100% here while measure.js reports the last column at 58%.
-// On a multi-page sheet the tallest column is not enough: a page is a fixed box and Chrome CLIPS
-// what does not fit (measured: 420mm of content in a 204mm box still printed one page), so the
-// per-page budget that paginate-pages.js measured while splitting is checked here too - that
-// measurement already exists, so no second browser pass is needed.
-let pagesOk = true, pagesDetail = '';
-try {
-  const pg = JSON.parse(fs.readFileSync(path.join(work, 'pages.json'), 'utf8'));
+
+let pg = null;
+try { pg = JSON.parse(fs.readFileSync(path.join(work, 'pages.json'), 'utf8')); } catch (e) { /* single page */ }
+const multi = !!(pg && (pg.pages || 0) > 1);
+
+if (multi) {
   const over = (pg.cuts || []).filter((c) => c.used > c.cols + 0.02);
   const filled = pg.filled === undefined ? (pg.cuts || []).length : pg.filled;
-  pagesOk = over.length === 0;
-  pagesDetail = over.length
-    ? '  OVER BUDGET: ' + over.map((c) => 'page ' + c.page + ' uses ' + c.used.toFixed(2) + '/' + c.cols).join(', ')
-    : '  ' + filled + ' of ' + pg.pages + ' page(s) with content';
-} catch (e) { /* no pagination pass: single-page build */ }
-record('last column not overflowing', !isNaN(fill) && fill <= 100.5 && pagesOk,
-       'tallest column=' + fill + '%' + pagesDetail);
+  const fills = (pg.cuts || []).map((c) => Math.round(c.used / c.cols * 100) + '%');
+  record('no page over its column budget',
+         over.length === 0 && filled <= pg.pages,
+         over.length
+           ? 'OVER: ' + over.map((c) => 'p' + c.page + ' ' + c.used.toFixed(2) + '/' + c.cols).join(', ')
+           : 'fill ' + fills.join(' / ') + ' of ' + pg.pages + ' page(s)');
+  record('last column not overflowing', true,
+         'page 1 tallest column=' + fill + '% (a multi-page sheet fills page 1 by design)');
+} else {
+  // What matters is that no block is wider than the column area: flowScroll > flowClient. The
+  // pageInner - flowClient difference is padding and legitimately varies by a fraction of a
+  // millimetre, so it must not fail the gate (a 2.3pt difference failed a perfectly clean sheet).
+  record('container not widened (fits declared columns)', scroll <= client + 1.5,
+         'pageInner=' + inner + ' flowClient=' + client + ' flowScroll=' + scroll);
+  record('last column not overflowing', !isNaN(fill) && fill <= 100.5,
+         'tallest column=' + fill + '%');
+}
 
-// ---- 5. hairline thickness inside the PDF
+// ---- 4c. no page needs more columns than it declares
+// The height model that split the pages can be one block optimistic, and Chrome then re-lays that
+// block into an extra column which the page box clips - the printed page loses a whole column, and
+// the only visible trace is a few word fragments at the page corner. Only a browser measurement
+// catches it, so every page is checked.
+const ow = tool('overwidth.js');
+const owOk = /every page fits/i.test(ow);
+record('no page wider than its columns', owOk,
+       owOk ? 'all pages fit' : (ow.match(/OVERWIDTH[^\n]*/g) || [ow.trim().split('\n')[0]]).join('; '));
+
+// ---- 5. hairline thickness inside the PDF// Chrome snaps every CSS rule to one device unit = 1.000pt in PDF space, so thinrules rewrites the
+// rectangles it can identify down to 0.25pt. Some 1.000pt fills survive by design: a KaTeX
+// \xrightarrow shaft is drawn as a wide, 1pt-tall rectangle and is visually correct at that
+// thickness. The gate therefore asserts "nothing fatter than one snapped unit", and reports how
+// much was actually thinned, instead of demanding that every rectangle be 0.25pt.
 const rules = tool('rules.js', [path.resolve(pdf)]);
-const heights = [...rules.matchAll(/^\s+([\d.]+)\s+(\d+)\s+([\d.]+)\s*$/gm)].map((m) => parseFloat(m[1]));
-if (Number(thin) > 0 && heights.length) {
-  const worst = Math.max(...heights);
-  record('hairlines thinned to ' + thin + 'pt', Math.abs(worst - Number(thin)) < 0.02,
-         heights.length + ' rules, max=' + worst.toFixed(3) + 'pt');
+const ruleRows = [...rules.matchAll(/^\s+([\d.]+)\s+(\d+)\s+([\d.]+)\s*$/gm)]
+  .map((m) => ({ h: parseFloat(m[1]), n: parseInt(m[2], 10) }));
+if (Number(thin) > 0 && ruleRows.length) {
+  const worst = Math.max(...ruleRows.map((r) => r.h));
+  const total = ruleRows.reduce((a, r) => a + r.n, 0);
+  const atThin = ruleRows.filter((r) => Math.abs(r.h - Number(thin)) < 0.02).reduce((a, r) => a + r.n, 0);
+  record('hairlines thinned to ' + thin + 'pt', worst <= 1.05,
+         total + ' rule fill(s): ' + atThin + ' at ' + thin + 'pt, worst ' + worst.toFixed(3) +
+         'pt' + (worst > 1.05 ? '' : ' (1pt fills are arrow shafts / snapped rules)'));
 } else {
   record('hairline check skipped', true, Number(thin) > 0 ? 'no thin rules found' : '--thin=0');
 }

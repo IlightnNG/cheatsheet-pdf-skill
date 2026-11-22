@@ -3,13 +3,25 @@
 **An agent skill that turns a body of course material into one dense A4 cheat sheet** — a PDF you
 print and bring to an exam.
 
-You write (or an AI writes) a Markdown cheat sheet; one command renders it to A4 landscape with real
-LaTeX typesetting — one page or two, two by default — and verifies that nothing overflowed or was
-clipped.
+You write (or an AI writes) a Markdown cheat sheet; one command lints it, renders it to A4 landscape
+with real LaTeX typesetting, and verifies with eleven geometry gates that nothing overflowed, was
+clipped or fell outside the printable margin.
 
 The skill directory, npm package and CLI keep the shorter name `cheatsheet-pdf`.
 
-![demo sheet](examples/demo.png)
+![information-theory cheat sheet](examples/information-theory.png)
+
+*A real sheet: EE5139 Information Theory, 8 chapters, 2 pages, 5 columns at 5.1 pt — 59 sections and
+11 past-paper questions, generated from ~42 KB of Markdown. The full PDF is
+[`examples/information-theory.pdf`](examples/information-theory.pdf).*
+
+What it is good at:
+
+- **formulas and theorems first** — three formula tiers (`$$!` core, `$$` standard, `$$?` supporting)
+  plus a starred priority scheme that colours whole sections;
+- **past papers included** — worked questions live next to the formulas they use;
+- **it refuses to print a broken sheet** — the lint stage stops literal `**`, missing glyphs,
+  numbering gaps and duplicated questions; the gates stop overflow, clipping and a half-empty page.
 
 ## Requirements
 
@@ -24,10 +36,13 @@ The skill directory, npm package and CLI keep the shorter name `cheatsheet-pdf`.
 git clone <this-repo> cheatsheet-pdf
 cd cheatsheet-pdf
 
-# render the bundled example
-npm run demo
-npm run verify      # all gates must report PASS
+npm run doctor     # node + Chrome + temp dir, then a full smoke render (10 s)
+npm run demo       # render the bundled example
+npm run verify     # all gates must report PASS
 ```
+
+`doctor` is the one command to run when something feels broken: it prints the effective defaults,
+renders `examples/regression.md` end to end, and tells you the fix if a requirement is missing.
 
 To make your own, copy `skills/cheatsheet-pdf/templates/sheet-master.md`, fill it in following
 the conventions below, then:
@@ -41,6 +56,32 @@ If you use an AI agent that can read files and run commands, point it at
 [`skills/cheatsheet-pdf/SKILL.md`](skills/cheatsheet-pdf/SKILL.md) — it contains the full
 two-stage workflow, including how to choose and rate content from past papers.
 
+## Troubleshooting
+
+Every message below is deliberate: it names the fix. Run `npm run doctor --silent` first if you are
+unsure whether the machine is set up.
+
+| What you see | Why | Fix |
+|---|---|---|
+| `Chrome/Chromium not found` | no browser at a standard path | set `CHROME_PATH` (PowerShell: `$env:CHROME_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"`) |
+| `verify: … is the build for "a.pdf", not "b.pdf"` | one `.cheatsheet/` per output folder, so it holds the LAST build | re-render the PDF you are verifying, or pass `--work=<dir>` |
+| `verify: sheet.html not found` | the intermediates were deleted | re-run `cheatsheet.js`; verify can only check a build it can see |
+| `LINT ERROR markup … literal "**"` | an emphasis pair spans a blank line | keep `**…**` on one line (it may span inline math) |
+| `LINT ERROR glyph … box-drawing stroke` | the font has no glyph for `─ │ →` in a code span | draw the diagram with `\xrightarrow` inside `$$…$$` |
+| `LINT ERROR structure … numbering breaks` | a section was inserted or removed by hand | add `--renumber` |
+| `LINT ERROR duplicate … past-paper question` | the same question answered in two sections | remove one, or split it deliberately with `(a)(b)` / `part` in the titles |
+| `KaTeX could not typeset every formula` | an unbalanced brace or a stray `\` in a `$$` block | the message names the line; fix the LaTeX |
+| `content does not fit N page(s)` | too much content for the page budget | `--base=auto`, or cut in the documented order (☆/★ first, never a ★★★ formula), or `--pages=3` |
+| `ADVICE: page 2 is only 40% full` | the page exists but is half empty | add examined topics; do not inflate `--base` |
+| a render takes a minute | `--base=auto` lays the sheet out once per candidate size | pass an explicit `--base=5.3` once you know the value |
+
+Two habits that avoid most of the above:
+
+- **Keep one `.cheatsheet/` per output folder** by giving each sheet its own directory, or render
+  one sheet at a time.
+- **Look at the page, not only at the gates.** `--preview` writes `<out>.p1.png` (and `.p2.png` with
+  `--preview=2`): gates measure geometry, they cannot see a glyph that failed to embed.
+
 ## How it works
 
 Two stages, deliberately separated:
@@ -48,12 +89,15 @@ Two stages, deliberately separated:
 | Stage | Who | Output |
 |---|---|---|
 | **A. Author** | you, or an AI agent following `SKILL.md` | `<name>.md` |
-| **B. Render** | `cheatsheet.js` — one command | `<name>.pdf`, one A4 landscape page |
+| **B. Render** | `cheatsheet.js` — one command | `<name>.pdf`, 1–2 A4 landscape pages |
 
-Stage B runs: Markdown → HTML (math protected from Markdown formatting) → KaTeX typesetting →
-over-wide formula fitting → column measurement → headless-Chrome printing → hairline fix-up. The
-final step exists because Chrome rounds every sub-point rule up to a full point when exporting,
-which prints fraction bars about five times too heavy.
+Stage B runs: Markdown → **lint** (markup leaks, missing glyphs, numbering, duplicate questions) →
+HTML (math protected from Markdown formatting) → KaTeX typesetting → over-wide formula fitting →
+column measurement → headless-Chrome printing → hairline fix-up → **verify** (10 geometry gates).
+The hairline step exists because Chrome rounds every sub-point rule up to a full point when
+exporting, which prints fraction bars about five times too heavy. The lint step exists because a
+literal `**` or a box-drawing stroke used to reach paper silently: those defects print *and* verify
+clean, since no geometry gate can see them.
 
 Intermediates go to `<output-dir>/.cheatsheet/`, which is gitignored and safe to delete.
 
@@ -84,7 +128,7 @@ holds:
 
 | Flag | Meaning | Default |
 |---|---|---|
-| `--cols` | number of columns | 6 |
+| `--cols` | number of columns | 5 |
 | `--base` | base (prose) font size in pt | 5.5 |
 | `--gap` | column gutter in mm | 1.9 |
 | `--math` | math size relative to prose | from stylesheet |
@@ -92,8 +136,20 @@ holds:
 | `--no-print` | measure only, no PDF | off |
 | `--split` | experimental formula line breaking | off |
 | `--thin` | printed hairline thickness in pt; `0` disables | 0.25 |
+| `--base=auto` | search for the largest `--base` that still fits the requested pages | off |
+| `--lint` | static checks only (markup leaks, missing glyphs, numbering), no PDF | off |
+| `--audit` | print the chapter / section / past-paper structure, then exit | off |
+| `--renumber` | render from a renumbered copy (the master is never edited) | off |
+| `--preview[=N]` | also write `<out>.pN.png` so a human can look at page N | off |
+| `--fill=<pct>` | warn when a page is emptier than this | off |
 | `--quiet` | warnings and the final summary only | off |
 | `--help`, `--version` | usage / version, then exit | — |
+
+Every render starts with a **lint** pass. `LINT ERROR` stops the build before anything is printed —
+it catches the defects that used to reach paper silently: a literal `**` from emphasis that spanned
+a table cell, a box-drawing stroke the embedded font has no glyph for, a section number that jumped,
+and the same past-paper question answered twice. `LINT WARN` is advice (prose inside a `\text{}`, a
+page that is only half full).
 
 Content does not fit → raise `--cols` or lower `--base`. Page looks half empty → the reverse.
 Change one dial, re-run, re-measure; two or three passes converge.
@@ -111,6 +167,16 @@ instead of a parameter sweep:
 [measure] COL=2 FILL=40 ... ADVICE: content fills only 1.40 of 5 columns - sparse.
           Enlarge the type with --base.  Safe start: --base=10.1; a formula-heavy sheet may need more.
 ```
+
+## Bundled examples
+
+| File | What it shows |
+|---|---|
+| [`examples/information-theory.pdf`](examples/information-theory.pdf) | the real thing: 8 chapters, 2 pages, 5 columns, 59 sections, 11 past-paper questions |
+| [`examples/demo.pdf`](examples/demo.pdf) | a one-page sheet from a 5 KB Markdown file |
+| [`examples/demo-2p.pdf`](examples/demo-2p.pdf) | the same content spread over two pages |
+| [`examples/demo-portrait.pdf`](examples/demo-portrait.pdf) | an A4 portrait overlay (`--css`) |
+| [`examples/regression.md`](examples/regression.md) | every parser and linter guard; `npm test` renders it |
 
 ## Customising
 
@@ -144,17 +210,28 @@ Portrait takes fewer, wider columns than landscape — here two at 6 pt fill the
 
 ## Verification
 
-`verify.js` reports nine gates — no wrapped formula, no orphaned punctuation, math size hierarchy,
-container not widened, last column not overflowing, hairlines thinned, exactly the requested page
-count, A4
-(either orientation; the report says which), math fonts embedded. All must pass before you print.
+`verify.js` reports eleven gates:
 
-Each render stamps `.cheatsheet/build.json` with the PDF it produced. If you point `verify.js` at a
-PDF whose sheet is not the one in that folder — rendering two variants from one directory leaves
-only the last build there — it stops with an error instead of reporting gates for the wrong page.
+| Gate | What it stops |
+|---|---|
+| display markers consumed | a `$$!` that md2body never recognised, printed verbatim |
+| no formula wrapped | a box broken mid-formula |
+| no orphaned punctuation | a lone `,` stranded on its own line |
+| math size hierarchy | supporting math smaller than inline math |
+| no page over its column budget | content that needs a third page for two |
+| last column not overflowing | content running past the page height |
+| **no page wider than its columns** | the column-clipping bug: a page re-laid one column wider than declared, so its last column is cut off by the page box |
+| hairlines thinned | Chrome's 1 pt slabs where a 0.25 pt rule belongs |
+| exactly N pages | a page count nobody asked for |
+| A4 page | the wrong paper size |
+| math fonts embedded | KaTeX glyphs that would print as boxes |
 
-One thing it cannot check: look at the rendered page. Crop the header, a formula-dense region and
-the last column and confirm nothing is clipped.
+All must pass before you print. Each render stamps `.cheatsheet/build.json` with the PDF it produced:
+pointing `verify.js` at a PDF whose sheet is not the one in that folder stops with an error instead
+of reporting gates for the wrong page.
+
+One thing no gate can check: look at the rendered page. `--preview` writes `out.p1.png` — crop the
+header, a formula-dense region and the last column and confirm nothing looks wrong.
 
 ## FAQ
 

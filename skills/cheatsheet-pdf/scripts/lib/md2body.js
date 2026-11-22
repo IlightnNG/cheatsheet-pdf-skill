@@ -58,12 +58,15 @@ if (aid) {
   notes.push('dropped "## Rating overview" - it records the authoring process, not the subject');
 }
 
-// ---- inline markdown, applied ONLY outside math ----
+// ---- inline markdown ----
+// `==text==` is the documented way to highlight a keyword (it becomes <mark>, which sheet.css
+// themes). It is applied here so it also works inside table cells and blockquotes.
 function mdInline(s) {
   return s
     .replace(/\*\*\*([^*]+)\*\*\*/g, '<b>$1</b>')
     .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
     .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+    .replace(/==([^=\n]+)==/g, '<mark>$1</mark>')
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
@@ -73,15 +76,18 @@ function mdInline(s) {
 // fail on the stray angle brackets.
 const MATH_RE = /\$\$[!?]?[\s\S]*?\$\$|\$[^$\n]*?\$/g;
 
+// Emphasis must be able to span inline math: "**BSC$(\epsilon)$**" used to be split into
+// "**BSC", "$(\epsilon)$", "**" by a per-segment pass, so neither half found its partner and
+// the asterisks were printed literally (observed on a real sheet). Mask the math into
+// placeholders, run the inline pass over the WHOLE string, then put the math back.
+const PH = '\u0001';
 function inline(s) {
-  let res = '', last = 0, m;
-  MATH_RE.lastIndex = 0;
-  while ((m = MATH_RE.exec(s)) !== null) {
-    if (m.index > last) res += mdInline(s.slice(last, m.index));
-    res += m[0];
-    last = m.index + m[0].length;
-  }
-  return res + mdInline(s.slice(last));
+  const stash = [];
+  const masked = s.replace(MATH_RE, (m) => {
+    stash.push(m);
+    return PH + (stash.length - 1) + PH;
+  });
+  return mdInline(masked).replace(new RegExp(PH + '(\\d+)' + PH, 'g'), (m, i) => stash[Number(i)]);
 }
 
 const lines = md.split(/\r?\n/);

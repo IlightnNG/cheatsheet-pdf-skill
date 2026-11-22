@@ -9,13 +9,19 @@
 // Options
 //   --base=<pt>    base (prose) font size                  [stylesheet: 5.5]
 //   --math=<em>    math size relative to prose             [stylesheet: ~0.93]
-//   --cols=<n>     number of columns                       [stylesheet: 6]
+//   --cols=<n>     number of columns                       [stylesheet: 5]
 //   --pages=<n>    pages to fill; 1 for a single sheet      [2]
 //   --gap=<mm>     column gutter                           [stylesheet: 1.9]
 //   --split        advanced formula line breaking (breaks at relations, paginates)
 //   --css=<file>   append a stylesheet on top of sheet.css (portrait, fonts, colours)
 //   --thin=<pt>    rewrite PDF hairlines to this thickness; 0 disables   [0.25]
 //   --no-print     stop after measuring (layout dry run, no PDF)
+//   --lint         static checks only (markup leaks, glyphs, numbering); no PDF
+//   --audit        print the chapter/section/question structure, then exit
+//   --renumber     render from a renumbered copy (the master is never edited)
+//   --preview[=N]  also write <out>.pN.png so a human can look at page N
+//   --fill=<pct>   advise when a page is emptier than this (multi-page only)
+//   --base=auto    pick the largest base size that still fits the requested pages
 //   --quiet        only print warnings and the final summary
 //   --help         print this text
 //   --version      print the version
@@ -29,9 +35,11 @@ const { execFileSync } = require('child_process');
 
 const HERE = __dirname;
 const LIB = path.join(HERE, 'lib');
+const TOOLS = path.join(HERE, 'tools');
 
 // ---------------------------------------------------------------- arguments
-const KNOWN = ['base', 'math', 'cols', 'pages', 'gap', 'split', 'css', 'thin', 'no-print', 'quiet', 'help', 'version'];
+const KNOWN = ['base', 'math', 'cols', 'pages', 'gap', 'split', 'css', 'thin', 'no-print', 'quiet', 'help', 'version',
+  'lint', 'audit', 'renumber', 'preview', 'fill'];
 const argv = process.argv.slice(2);
 const flags = {};
 const positional = [];
@@ -89,6 +97,17 @@ const outAbs = path.resolve(outPdf || mdAbs.replace(/\.md$/i, '') + '.pdf');
 const work = process.env.SHEET_DIR ? path.resolve(process.env.SHEET_DIR) : path.join(path.dirname(outAbs), '.cheatsheet');
 fs.mkdirSync(work, { recursive: true });
 
+// --renumber renders from a normalised copy: inserting a section by hand used to leave gaps
+// (4.6 after 4.4) or duplicates (two 5.2s), because the number is the author's job. The master
+// stays untouched, so the author keeps editing without thinking about numbers.
+let srcMd = mdAbs;
+if (flags.renumber) {
+  const norm = path.join(work, 'normalized.md');
+  execFileSync(process.execPath, [path.join(LIB, 'renumber.js'), mdAbs, norm],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], timeout: 60000 });
+  srcMd = norm;
+}
+
 const env = Object.assign({}, process.env, {
   SHEET_DIR: work,
   SHEET_NO_SPLIT: flags.split ? '' : '1',      // conservative breaking is the default
@@ -120,25 +139,154 @@ function step(script, label, extraArgs) {
 }
 
 // ---------------------------------------------------------------- pipeline
-console.log('cheatsheet: ' + path.basename(mdAbs) + '  ->  ' + outAbs);
-console.log('  work dir   ' + work);
-console.log('  line break ' + (flags.split ? 'advanced (split at relations + paginate)' : 'conservative (one formula per line)'));
-console.log('  knobs      base=' + (flags.base || 'css default') + '  math=' + (flags.math || 'css default') +
-            '  cols=' + (flags.cols || 'css default'));
 
-step('md2body.js', 'md2body', [mdAbs]);
-const buildOut = step('build.js', 'build');
-if (/WARNING - \d+ formula\(s\) failed/.test(buildOut)) {
-  console.error('\ncheatsheet: KaTeX could not typeset every formula - fix the Markdown first.');
+// Lint first: a literal "**" or a box-drawing stroke must never reach the printer. The checks are
+// cheap (text only) and every one of them exists because that defect shipped once.
+function lint(extraArgs) {
+  try {
+    const out = execFileSync(process.execPath, [path.join(LIB, 'lint.js'), srcMd].concat(extraArgs || []), {
+      encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000
+    });
+    const lines = out.trim().split('\n').filter(Boolean);
+    for (const l of lines) if (!quiet || /^LINT (ERROR|\d)/.test(l)) console.log('  [lint] ' + l);
+    return { ok: true, out };
+  } catch (e) {
+    const out = ((e.stdout || '') + (e.stderr || '')).trim();
+    if (out) for (const l of out.split('\n')) console.log('  [lint] ' + l);
+    return { ok: false, out };
+  }
+}
+
+if (flags.audit) {
+  console.log('cheatsheet: ' + path.basename(mdAbs) + '   audit');
+  lint(['--structure']);
+  process.exit(0);
+}
+
+// md2body first: lint inspects the built body (that is where a literal "**" or "==" would show),
+// and build.js needs body.html anyway.
+step('md2body.js', 'md2body', [srcMd]);
+
+const lintRes = lint();
+if (!lintRes.ok) {
+  console.error('\ncheatsheet: lint found errors - fix the Markdown first (or run with --lint to see all).');
   process.exit(1);
 }
-step('paginate.js', 'paginate');
-step('fit-formulas.js', 'fit');
-// Distribute blocks over the requested pages BEFORE measuring: a page is a fixed box, so the
-// split has to be decided (and its overflow reported) rather than left to the printer, which
-// clips silently. See lib/paginate-pages.js.
-step('paginate-pages.js', 'pages');
+if (flags.lint) {
+  console.log('\ncheatsheet: --lint, stopping before the render.');
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------- base=auto
+// 5.5 pt used to produce three pages where 5.4 pt produced two: one unbreakable block decided the
+// count, and the advice line ("add topics / tighten") did not mention the smallest possible fix.
+// Binary search keeps the type as large as the page budget allows.
+// A soft runner: the base search MUST survive a page count that does not fit (paginate-pages.js
+// exits 1 with ADVICE in that case), while every other stage keeps failing loudly.
+function runSoft(script, label, extraArgs) {
+  try {
+    const out = execFileSync(process.execPath, [path.join(LIB, script)].concat(extraArgs || []), {
+      encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000
+    });
+    return { ok: true, out };
+  } catch (e) {
+    return { ok: false, out: ((e.stdout || '') + (e.stderr || '')).trim() };
+  }
+}
+
+// Tools live in ../tools and are measured in the browser. overwidth.js is the one that catches a
+// page whose re-laid blocks need one more column than declared: the height model cannot see it, and
+// the page box CLIPS the extra column (on a printed sheet this was two word fragments, "plus" and
+// "equ", at the top-right corner of page 1).
+function runToolSoft(script) {
+  try {
+    const out = execFileSync(process.execPath, [path.join(TOOLS, script)], {
+      encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000
+    });
+    return { ok: true, out: out.trim() };
+  } catch (e) {
+    return { ok: false, out: ((e.stdout || '') + (e.stderr || '')).trim() };
+  }
+}
+
+function layoutWith(basePt) {
+  env.SHEET_BASE_PT = basePt === null ? '' : String(basePt);
+  const buildOut = step('build.js', 'build');
+  step('paginate.js', 'paginate');
+  step('fit-formulas.js', 'fit');
+  const pagesOut = runSoft('paginate-pages.js', 'pages');
+  if (!pagesOut.ok) {
+    // keep the ADVICE lines: the search is about to change the base, but the author should see why
+    for (const l of pagesOut.out.split('\n')) if (/^ADVICE/.test(l)) console.log('  [pages] ' + l);
+  }
+  const ow = runToolSoft('overwidth.js');
+  let pg = null;
+  try { pg = JSON.parse(fs.readFileSync(path.join(work, 'pages.json'), 'utf8')); } catch (e) { /* single page */ }
+  return { pg, buildOut, ow };
+}
+function fits(r, asked) {
+  if (!r || !r.pg) return false;
+  if (r.pg.overflow) return false;
+  if (r.ow && !r.ow.ok) return false;   // a page needs more columns than declared: its text is clipped
+  return (r.pg.cuts || []).every((c) => c.used <= c.cols + 0.02) && (r.pg.filled || 0) <= asked;
+}
+
+const askedPages = Number(flags.pages) || 2;
+if (String(flags.base) === 'auto') {
+  let chosen = null;
+  for (let b = 5.8; b >= 5.0 - 1e-9; b -= 0.1) {
+    const r = layoutWith(Number(b.toFixed(2)));
+    if (r.buildOut && /WARNING - \d+ formula\(s\) failed/.test(r.buildOut)) break;
+    if (fits(r, askedPages)) { chosen = Number(b.toFixed(2)); break; }
+  }
+  if (chosen === null) {
+    chosen = 5.0;
+    console.log('  [base] auto: nothing fits ' + askedPages + ' page(s) down to 5.0pt - using 5.0pt and reporting');
+  } else {
+    console.log('  [base] auto: ' + chosen + 'pt is the largest size that fits ' + askedPages + ' page(s)');
+  }
+  env.SHEET_BASE_PT = String(chosen);
+} else {
+  console.log('  knobs      base=' + (flags.base || 'css default') + '  math=' + (flags.math || 'css default') +
+              '  cols=' + (flags.cols || 'css default'));
+  const r = layoutWith(flags.base === undefined ? null : Number(flags.base));
+  if (r.buildOut && /WARNING - \d+ formula\(s\) failed/.test(r.buildOut)) {
+    console.error('\ncheatsheet: KaTeX could not typeset every formula - fix the Markdown first.');
+    process.exit(1);
+  }
+}
+
+// measure.js writes the geometry numbers that --fill and the ADVICE lines are based on.
+// Refuse to print a sheet that does not fit the requested pages, or whose page needs more columns
+// than declared: the printer would happily emit three pages for --pages=2, and an over-wide page
+// CLIPS a whole column of text (the failure that left "plus"/"equ" fragments at the page corner).
+let pgFinal = null;
+try { pgFinal = JSON.parse(fs.readFileSync(path.join(work, 'pages.json'), 'utf8')); } catch (e) { /* single page */ }
+const owFinal = runToolSoft('overwidth.js');
+if ((pgFinal && !fits({ pg: pgFinal, ow: owFinal }, askedPages)) || (!pgFinal && !owFinal.ok)) {
+  console.error('\ncheatsheet: the content does not fit the requested ' + askedPages + ' page(s) at this size.');
+  if (pgFinal) console.error('  page fill: ' + (pgFinal.cuts || []).map((c) => Math.round(c.used / c.cols * 100) + '%').join(' / '));
+  if (!owFinal.ok) console.error('  ' + owFinal.out.split('\n')[0] + '  (a column of text would be clipped)');
+  console.error('  Fix by cutting content (lowest star tier first) or try --base=auto / --pages=' + (askedPages + 1) + '.');
+  process.exit(1);
+}
 step('measure.js', 'measure');
+
+// --fill: a half-empty second page is not a layout failure, but it is wasted paper, and the tool
+// used to call that "good fit". The paginator already recorded how much of each page is used.
+// Multi-page sheets get a default target of 85%; a one-page sheet is left alone because asking for
+// "more content" when the author wanted one page is noise.
+let pg = null;
+try { pg = JSON.parse(fs.readFileSync(path.join(work, 'pages.json'), 'utf8')); } catch (e) { /* single page */ }
+const fillTarget = flags.fill !== undefined ? Number(flags.fill) : (askedPages > 1 ? 85 : 0);
+if (pg && (pg.cuts || []).length && fillTarget > 0) {
+  const target = fillTarget;
+  const low = pg.cuts.filter((c) => c.used / c.cols * 100 < target);
+  for (const c of low) {
+    console.log('ADVICE: page ' + c.page + ' is only ' + Math.round(c.used / c.cols * 100) + '% full (target ' +
+                target + '%) - add examined topics rather than inflating the type.');
+  }
+}
 
 if (flags['no-print']) {
   console.log('\ncheatsheet: --no-print, stopping after measure. sheet.html is at ' + path.join(work, 'sheet.html'));
@@ -152,6 +300,13 @@ if (Number(thin) > 0) {
   const out = execFileSync(process.execPath, [path.join(LIB, 'thinrules.js'), outAbs, outAbs, thin],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], timeout: 120000 });
   if (!quiet) for (const l of out.trim().split('\n')) console.log('  [thin] ' + l);
+}
+
+// --preview[=N]: geometry gates cannot see a missing glyph or a highlight that did nothing.
+if (flags.preview) {
+  const pageNo = flags.preview === true ? 1 : (Number(flags.preview) || 1);
+  const png = outAbs.replace(/\.pdf$/i, '') + '.p' + pageNo + '.png';
+  step('preview.js', 'preview', [path.join(work, 'sheet.html'), png, String(pageNo)]);
 }
 
 // Stamp the build with the PDF it produced. Two sheets rendered from one directory share a

@@ -1,6 +1,8 @@
 # ── generated intermediates ───────────────────────────────────────────────────────────────
 # cheatsheet.js writes body.html / sheet.html / preview.png / meta.json here.
 .cheatsheet/
+.preview-profile/
+*.p[0-9].png
 
 # ── node ─────────────────────────────────────────────────────────────────────────────────
 node_modules/

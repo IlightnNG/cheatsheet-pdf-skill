@@ -3,12 +3,15 @@ name: cheatsheet-pdf
 description: Turn lecture notes, slides or past papers into an A4 cheat sheet PDF of one or more pages (default two, double-sided). Use when the user asks for a cheat sheet, formula sheet, crib sheet, or "one page of formulas" for an exam. Covers evidence-based topic rating, Markdown authoring conventions, and a one-command renderer that fits the content to the requested page count.
 ---
 
-# Cheat sheet PDF (one A4 page)
+# Cheat sheet PDF (one or two A4 pages)
 
 Two stages. You author the Markdown; one command renders and checks it.
 
+- **0. Check the machine** (once): `node skills/cheatsheet-pdf/scripts/doctor.js --smoke` verifies
+  node, Chrome and the temp dir, then renders the bundled regression sheet end to end.
 - **A. Author** `<name>.md`, starting from `skills/cheatsheet-pdf/templates/sheet-master.md`.
-- **B. Render** it: `cheatsheet.js` fits it to the requested pages, `verify.js` checks the result.
+- **B. Render** it: `cheatsheet.js` lints, fits it to the requested pages, and prints it;
+  `verify.js` checks the result.
 
 The hard part is **capacity**, not markup: a fixed page area must hold an elastic amount of
 content. A good sheet comes from choosing well and then fitting it — in that order.
@@ -48,11 +51,32 @@ write the subject, never a record of how you chose it.
 | `> **Trap.** …` | warning box |
 | `- item` / `1. item` | bullet list / numbered list |
 | `\| a \| b \|` | table — 0.92 em, cannot split across a column |
+| `**bold**` / `*italic*` | emphasis — works across inline math (`**BSC$(\epsilon)$**` is fine) and inside table cells |
+| `==keyword==` | yellow highlight; use it for the 1–2 search keywords of a "statements" line |
+| `` `code` `` | grey monospace chip (identifiers, file names) |
+
+### What does NOT render
+
+Everything else is printed literally, so the linter fails the build instead: `__bold__`, `~~strike~~`,
+raw `<span style=…>`, `\textbf{…}` outside math, and box-drawing characters (`─ │ ┌`) or thin arrows
+inside `` `code` `` — the embedded fonts have no glyph, so a hand-drawn diagram silently loses its
+strokes. Draw a channel diagram with `\xrightarrow` inside a display block instead:
+
+```markdown
+$$0\xrightarrow{\ 1-\epsilon\ }0\qquad 0\xrightarrow{\ \epsilon\ }1$$
+```
+
+The lint stage (`LINT ERROR …`) blocks the print; warnings are advice, not failures.
 
 ### Choosing what goes in
 
-1. **Keep the teaching order.** Never reorder by importance — the star ratings carry the priority
-   signal, and a chapter-ordered sheet is far easier to study from.
+1. **Chapter order, then type order.** Keep the syllabus order of chapters (a chapter-ordered sheet
+   is what you study from). Inside each chapter write the blocks in this order, because that is the
+   order an exam question uses them:
+   1. **formulas and theorems** (§N.1 “Formulas”, one formula per `$$` block),
+   2. **statements to judge** — the short TRUE/FALSE lines, each with `==keyword==`,
+   3. **past-paper questions**, as `## ★★★ N.k 20xx Qn — title (marks)` with the data and the steps.
+   A chapter with no past-paper question keeps 1–2 only.
 2. **Rate by evidence, not intuition.** Count how often a topic appears across the past papers and
    how many marks it carries. High frequency *and* high marks → `★★★`. Recurs reliably → `★★`. In
    scope but never yet examined → `★` (the "predicted new question" band). Context only → `☆`.
@@ -64,6 +88,9 @@ write the subject, never a record of how you chose it.
 5. **Cover every examined topic**, even thinly. A topic that appeared in past papers must appear
    somewhere — as a formula box, or at minimum a `☆` line. Never trade a topic away for a larger
    font: cut prose instead.
+6. **A judgement table belongs in the formula part**, not buried in a worked example. If a rule has
+   cases (`d=1` when a column is zero, `d≥2` without a zero column, …), give it its own `$$`/table
+   block under the chapter's formulas, then let the example refer to it.
 
 ### Compression order
 
@@ -79,7 +106,8 @@ When it does not fit — stop as soon as it fits:
 ### Two Markdown hazards
 
 - **Never write `\|` inside a table row** — it is the cell separator. Use `\mid` or `\lVert`.
-- **Math stars are superscripts**: `A^*` is not emphasis. Never let a `*…*` pair span a formula.
+- **Do not put a blank line inside `**bold**`** — the emphasis is applied per line, so an open pair
+  leaks its asterisks. Spanning inline math is fine (`**BSC$(\epsilon)$**` renders bold).
 
 **Checkpoint.** Show the Markdown to the user — sections, star ratings, and what you cut — and
 wait for approval before rendering. Skip only if the user asks for a quick one-shot result.
@@ -91,14 +119,43 @@ node skills/cheatsheet-pdf/scripts/cheatsheet.js <name>.md <name>.pdf --cols=5 -
 node skills/cheatsheet-pdf/scripts/verify.js <name>.pdf
 ```
 
-Flags: `--cols=<n>` columns · `--pages=<n>` pages to fill (**default 2**) · `--base=<pt>` prose
-size · `--gap=<mm>` gutter · `--math=<em>` math size relative to prose · `--no-print` measure
-only · `--thin=<pt>` printed hairline thickness · `--quiet` · `--help` · `--version`. Defaults come
-from the stylesheet (2 pages, 6 columns, 5.5 pt); a run prints the settings it used on its first
-lines.
+Flags: `--cols=<n>` columns · `--pages=<n>` pages to fill (**default 2**) · `--base=<pt>` prose size
+(`--base=auto` searches for the largest size that still fits) · `--gap=<mm>` gutter · `--math=<em>`
+math size relative to prose · `--no-print` measure only · `--lint` static checks only (no PDF) ·
+`--audit` print the chapter/section/question structure · `--renumber` render from a renumbered copy
+· `--preview[=N]` write `<out>.pN.png` · `--fill=<pct>` warn about a page emptier than this ·
+`--thin=<pt>` hairline thickness · `--quiet` · `--help` · `--version`. Defaults come from the
+stylesheet (2 pages, 5 columns, 5.5 pt, 5 mm margins); a run prints the settings it used on its first lines.
 
-**Do not search the dials blindly.** Start at `--cols=5`, run once, and act on the `ADVICE:` lines
-that `measure` prints:
+The first three stages are automatic and non-negotiable:
+
+- **lint** runs before anything is printed. `LINT ERROR` (literal `**`, a missing glyph, a numbering
+  gap, the same past-paper question answered twice) stops the build; `LINT WARN` is advice.
+- **`--base=auto`** is the sane default when a page count must be hit exactly: 5.5 pt and 5.4 pt can
+  differ by a whole page, and the search reports the largest size that fits.
+- **`--fill=90`** turns "page 2 is half empty" into an `ADVICE:` line, which is wasted paper, not a
+  layout defect.
+
+**If the build stops, the message names the fix.** Do not edit the stylesheet, and do not delete the
+offending content: `--base=auto` is a *consequence* of too much content, not a cause.
+
+| Message | Fix |
+|---|---|
+| `Chrome/Chromium not found` | set `CHROME_PATH`; `doctor.js` prints the path it tried |
+| `lint found errors` (`markup`) | `**…**` spans a blank line — keep the pair on one line |
+| `lint found errors` (`glyph`) | a `─ │ →` sits outside math — use `\xrightarrow` in a `$$` block |
+| `lint found errors` (`structure`) | section numbers drifted — add `--renumber` |
+| `lint found errors` (`duplicate`) | the same past-paper question twice — merge, or split with `(a)(b)` markers |
+| `KaTeX could not typeset every formula` | an unbalanced brace or a trailing `\` in a `$$` block |
+| `the content needs more than N page(s)` | `--base=auto`, cut in the documented order, or `--pages=N+1` |
+| `verify: … is the build for "x.pdf", not "y.pdf"` | one `.cheatsheet/` per folder — re-render, or `--work=<dir>` |
+
+**First run on a new machine:** `node skills/cheatsheet-pdf/scripts/doctor.js --smoke` checks node,
+Chrome and the temp dir, then renders the regression example end to end.
+
+**Do not search the dials blindly.** Start with the defaults (landscape A4, 5 columns, 2 pages, 5 mm
+margins), add `--base=auto` when the page count must be hit exactly, run once, and act on the
+`ADVICE:` lines that `measure` prints:
 
 - *"fill it with --cols=K … or --base=B"* → pick one and re-run. The column route is exact for a
   formula-heavy sheet; the type route always works but also widens every formula.
@@ -119,15 +176,20 @@ Two passes converge. Sweeping twenty combinations means the advice was ignored.
 
 ## Before you deliver
 
-1. Every past-paper topic appears somewhere on the page.
-2. The three tiers are visibly used — a reader can tell in five seconds what must be memorised.
-3. Every `★★★` formula has a derivation line or a `*Meaning:*`.
-4. `verify.js` reports 9/9 PASS.
-5. **Look at the rendered page**, not just the gate report: the header is not clipped, no formula
-   broke mid-way, the last column does not run off the page, and no heading is stranded at the
-   bottom of a column. `node skills/cheatsheet-pdf/scripts/tools/diag.js <out.png>` writes a
-   full-page preview — one is normally enough; crop only if something looks wrong.
-6. Nothing was cut merely to make the type bigger.
+1. `--lint` reports **0 errors** (a literal `**`, a glyph the font lacks, a numbering gap, a
+   duplicated past-paper question).
+2. `--audit` shows chapters 1..N in order, sections numbering without gaps, and each past-paper
+   question once (a question split across two chapters must say so in its titles, e.g.
+   `2023 Q2 (a)(b) — source part` / `2023 Q2 (c)(d) — extraction`).
+3. Every past-paper topic appears somewhere on the page.
+4. The three tiers are visibly used — a reader can tell in five seconds what must be memorised.
+5. Every `★★★` formula has a derivation line or a `*Meaning:*`.
+6. `verify.js` reports 11/11 PASS. On a multi-page sheet the relevant capacity gate is *"no page over
+   its column budget"*; the flow-width number in the detail line is expected to exceed one page.
+7. **Look at the rendered page** (`--preview` writes `out.p1.png`, `--preview=2` writes `out.p2.png`).
+   The gates measure geometry; they cannot see a glyph that failed to embed or a highlight that did
+   nothing.
+8. Nothing was cut merely to make the type bigger.
 
 ## Two things that are easy to get wrong
 

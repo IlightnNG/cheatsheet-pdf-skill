@@ -18,7 +18,10 @@ html, body { margin: 0; padding: 0; background: #fff; }
 .page {
   width: 297mm;
   height: 210mm;
-  padding: 3.0mm 3.0mm 3.2mm 3.0mm;
+  /* 5 mm on every side: printers routinely clip below ~5 mm, and the old 3 mm margin lost the
+     first and last characters of a line on the outer columns. Two characters at 5.5 pt are about
+     2 mm, so this is the "2 characters of extra margin" the page needed. */
+  padding: 5.0mm;
   font-family: "Cambria", "Georgia", "Times New Roman", serif;
   font-size: 5.5pt;
   line-height: 1.05;
@@ -76,7 +79,7 @@ html, body { margin: 0; padding: 0; background: #fff; }
    width huge, and Chrome then widens the whole multicol container past the page - the flow
    went to 11797px (84 columns) and every box was clipped. With min-width:0 the item stays
    at the page width and the formulas wrap at their <wbr> points instead. */
-.flow { flex: 1 1 auto; min-width: 0; column-count: 6; column-gap: 1.9mm; column-fill: auto; }
+.flow { flex: 1 1 auto; min-width: 0; column-count: 5; column-gap: 1.9mm; column-fill: auto; }
 
 /* ---------------- headings ---------------- */
 /* chapter bars. The document title in .hdr has its own rule below and keeps no fill. */
@@ -154,6 +157,12 @@ sup { font-size: 0.68em; vertical-align: 0.42em; line-height: 0; }
 sub { font-size: 0.68em; vertical-align: -0.2em; line-height: 0; }
 .unk { color: #c00; background: #ffe0e0; }
 code { font-family: Consolas, monospace; font-size: 0.92em; background: #eef1f5; padding: 0 0.25mm; }
+/* Emphasis produced by the Markdown (**bold** -> <b>, *italic* -> <i>) and the keyword highlight
+   (==keyword== -> <mark>). Without rules here a bold run is browser-default only, and a highlight
+   keeps Chrome's default yellow, which clashes with the sheet's palette. */
+b, strong { font-weight: 700; color: #13375e; }
+i, em { font-style: italic; color: #2c3f57; }
+mark { background: #ffe9a4; color: inherit; padding: 0 0.15mm; border-radius: 0.4mm; }
 
 .zh { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
 
