@@ -4,14 +4,14 @@
 print and bring to an exam.
 
 You write (or an AI writes) a Markdown cheat sheet; one command lints it, renders it to A4 landscape
-with real LaTeX typesetting, and verifies with eleven geometry gates that nothing overflowed, was
-clipped or fell outside the printable margin.
+with real LaTeX typesetting, and verifies with twelve gates that nothing overflowed, was clipped,
+fell outside the printable margin, or drifted from the reference look.
 
 The skill directory, npm package and CLI keep the shorter name `cheatsheet-pdf`.
 
 ![information-theory cheat sheet](examples/information-theory.png)
 
-*A real sheet: EE5139 Information Theory, 8 chapters, 2 pages, 5 columns at 5.1 pt — 59 sections and
+*A real sheet: EE5139 Information Theory, 8 chapters, 2 pages, 5 columns at 5.3 pt — 59 sections and
 11 past-paper questions, generated from ~42 KB of Markdown. The full PDF is
 [`examples/information-theory.pdf`](examples/information-theory.pdf).*
 
@@ -20,8 +20,11 @@ What it is good at:
 - **formulas and theorems first** — three formula tiers (`$$!` core, `$$` standard, `$$?` supporting)
   plus a starred priority scheme that colours whole sections;
 - **past papers included** — worked questions live next to the formulas they use;
-- **it refuses to print a broken sheet** — the lint stage stops literal `**`, missing glyphs,
-  numbering gaps and duplicated questions; the gates stop overflow, clipping and a half-empty page.
+- **it refuses to print a broken sheet** — the lint stops literal `**`, missing glyphs, numbering
+  gaps and duplicated questions; the gates stop overflow, clipping and a half-empty page; the theme
+  check stops a palette that drifted from the reference.
+- **content is yours, the look is not** — the shape rules are advice (`--strict-style` makes them
+  fatal), while colours, box fills, dividers and the typeface are pinned to a named token list.
 
 ## Requirements
 
@@ -36,7 +39,7 @@ What it is good at:
 git clone <this-repo> cheatsheet-pdf
 cd cheatsheet-pdf
 
-npm run doctor     # node + Chrome + temp dir, then a full smoke render (10 s)
+npm run doctor     # node + Chrome + temp dir, then a full smoke render (~1 min)
 npm run demo       # render the bundled example
 npm run verify     # all gates must report PASS
 ```
@@ -44,11 +47,11 @@ npm run verify     # all gates must report PASS
 `doctor` is the one command to run when something feels broken: it prints the effective defaults,
 renders `examples/regression.md` end to end, and tells you the fix if a requirement is missing.
 
-To make your own, copy `skills/cheatsheet-pdf/templates/sheet-master.md`, fill it in following
-the conventions below, then:
+To make your own, copy `skills/cheatsheet-pdf/templates/sheet-master.md`, fill it in following the
+conventions below, then (no flags needed — the defaults are the reference layout):
 
 ```bash
-node skills/cheatsheet-pdf/scripts/cheatsheet.js my-sheet.md my-sheet.pdf --cols=5
+node skills/cheatsheet-pdf/scripts/cheatsheet.js my-sheet.md my-sheet.pdf
 node skills/cheatsheet-pdf/scripts/verify.js my-sheet.pdf
 ```
 
@@ -149,15 +152,15 @@ holds:
 
 | Flag | Meaning | Default |
 |---|---|---|
+| `--pages` | pages to fill (1 for a single sheet) | 2 |
 | `--cols` | number of columns | 5 |
-| `--base` | base (prose) font size in pt | 5.5 |
+| `--base` | prose size in pt, or `auto` (largest that fills the pages) / `css` (stylesheet value) | auto |
 | `--gap` | column gutter in mm | 1.9 |
 | `--math` | math size relative to prose | from stylesheet |
 | `--css=<file>` | append a stylesheet on top of `sheet.css` | off |
 | `--no-print` | measure only, no PDF | off |
 | `--split` | experimental formula line breaking | off |
 | `--thin` | printed hairline thickness in pt; `0` disables | 0.25 |
-| `--base=auto` | search for the largest `--base` that still fits the requested pages | on |
 | `--lint` | static checks only (markup leaks, missing glyphs, numbering), no PDF | off |
 | `--strict-style` | turn the shape advice into hard errors | off |
 | `--theme=any` | declare a custom palette (skip the reference theme check) | off |
@@ -168,6 +171,10 @@ holds:
 | `--fill=<pct>` | warn when a page is emptier than this | off |
 | `--quiet` | warnings and the final summary only | off |
 | `--help`, `--version` | usage / version, then exit | — |
+
+`verify.js` takes its own flags: `--work=<dir>` (where the build's `.cheatsheet/` lives, when the
+PDF was moved), `--thin=<pt>` (must match the render), and `--theme=any` (you changed the palette on
+purpose). Run it on the PDF the render just wrote.
 
 Every render starts with a **lint** pass. `LINT ERROR` stops the build before anything is printed —
 it catches the defects that used to reach paper silently: a literal `**` from emphasis that spanned

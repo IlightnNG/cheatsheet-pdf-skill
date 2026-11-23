@@ -159,22 +159,44 @@ node skills/cheatsheet-pdf/scripts/cheatsheet.js <name>.md <name>.pdf --cols=5 -
 node skills/cheatsheet-pdf/scripts/verify.js <name>.pdf
 ```
 
-Flags: `--cols=<n>` columns · `--pages=<n>` pages to fill (**default 2**) · `--base=<pt>` prose size (default `auto`: the largest size that fills the pages; `--base=css` keeps the stylesheet value)
-(`--base=auto` searches for the largest size that still fits) · `--gap=<mm>` gutter · `--math=<em>`
-math size relative to prose · `--no-print` measure only · `--lint` static checks only (no PDF) ·
-`--audit` print the chapter/section/question structure · `--renumber` render from a renumbered copy
-· `--preview[=N]` write `<out>.pN.png` · `--fill=<pct>` warn about a page emptier than this ·
-`--thin=<pt>` hairline thickness · `--quiet` · `--help` · `--version`. Defaults come from the
-stylesheet (2 pages, 5 columns, 5.5 pt, 5 mm margins); a run prints the settings it used on its first lines.
+Layout flags (free for anyone to use):
 
-The first three stages are automatic and non-negotiable:
+| Flag | Meaning | Default |
+|---|---|---|
+| `--pages=<n>` | pages to fill; `1` for a single sheet | 2 |
+| `--cols=<n>` | columns | 5 |
+| `--base=<pt>` | prose size; `auto` = largest that fills the pages, `css` = stylesheet value | auto |
+| `--gap=<mm>` | column gutter | 1.9 |
+| `--math=<em>` | math size relative to prose | from stylesheet |
+| `--css=<file>` | stylesheet overlay (portrait paper, a custom palette) | off |
+| `--thin=<pt>` | printed hairline thickness; `0` disables | 0.25 |
+| `--no-print` | measure only, no PDF | off |
 
-- **lint** runs before anything is printed. `LINT ERROR` (literal `**`, a missing glyph, a numbering
-  gap, the same past-paper question answered twice) stops the build; `LINT WARN` is advice.
-- **`--base=auto`** is the sane default when a page count must be hit exactly: 5.5 pt and 5.4 pt can
-  differ by a whole page, and the search reports the largest size that fits.
-- **`--fill=90`** turns "page 2 is half empty" into an `ADVICE:` line, which is wasted paper, not a
-  layout defect.
+Pipeline flags:
+
+| Flag | Meaning |
+|---|---|
+| `--lint` | the static checks only (markup leaks, glyphs, numbering); no PDF |
+| `--audit` | print the chapter/section/past-paper structure, then exit |
+| `--strict-style` | make the shape advice fatal (team/classroom mode) |
+| `--no-style` | skip the shape report entirely |
+| `--theme=any` | declare a custom palette; the theme check then only reports |
+| `--renumber` | render from a renumbered copy (the master is never edited) |
+| `--preview[=N]` | write `<out>.pN.png` so a human can look at page N |
+| `--fill=<pct>` | flag a page emptier than this (85 % by default on multi-page) |
+| `--quiet` | warnings and the final summary only |
+
+A run prints the knobs it used on its first lines, and the stamps are recorded in
+`.cheatsheet/build.json` so `verify.js` can tell you when you are verifying the wrong build.
+
+Three stages run before the PDF is written:
+
+- **lint** — `LINT ERROR` (literal `**`, a missing glyph, a numbering gap, the same past-paper
+  question answered twice) stops the build; `LINT WARN` is advice.
+- **style** — `STYLE WARN` says how far the sheet drifts from the specimen (chapters, section order,
+  blocks, star mix). It never stops a build unless you pass `--strict-style`.
+- **theme** — twenty colour/typeface tokens are compared with the reference sheet. A drift stops the
+  build until you pass `--theme=any`, which is how a deliberate restyle declares itself.
 
 **If the build stops, the message names the fix.** Do not edit the stylesheet, and do not delete the
 offending content: `--base=auto` is a *consequence* of too much content, not a cause.
@@ -247,4 +269,10 @@ Two passes converge. Sweeping twenty combinations means the advice was ignored.
 ## Reference
 
 - `skills/cheatsheet-pdf/templates/sheet-master.md` — copy this; it carries the conventions.
-- `examples/demo.md` — a finished sheet (~5 KB) with those conventions applied.
+- `examples/information-theory.md` — **the reference specimen**: 8 chapters, 59 sections, 213 formula
+  blocks, 11 past-paper questions, 2 pages. When a shape question is not answered above, this file
+  answers it.
+- `examples/regression.md` — every parser, linter and style guard as an executable assertion.
+- `skills/cheatsheet-pdf/scripts/sheet.css` — the whole look in one file; the tokens that must not
+  drift are listed in `scripts/lib/theme.js`.
+- `examples/demo.md` — a small one-page sheet (~5 KB) when you want a minimal example.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // verify.js - run every layout gate against a rendered sheet and report pass/fail.
 //
-//   node verify.js <out.pdf> [--work=<dir>] [--thin=0.25]
+//   node verify.js <out.pdf> [--work=<dir>] [--thin=0.25] [--theme=any]
 //
 // The gates read the built sheet.html (next to the PDF's .cheatsheet/ folder by default) and
 // measure real geometry in a browser - never text extraction, which reports lone punctuation
@@ -24,7 +24,7 @@ for (const a of argv) {
   else positional.push(a);
 }
 const pdf = positional[0];
-if (!pdf) { console.error('verify: usage: node verify.js <out.pdf> [--work=<dir>]'); process.exit(2); }
+if (!pdf) { console.error('verify: usage: node verify.js <out.pdf> [--work=<dir>] [--theme=any]'); process.exit(2); }
 if (!fs.existsSync(pdf)) { console.error('verify: PDF not found: ' + pdf); process.exit(2); }
 
 const work = path.resolve(flags.work || path.join(path.dirname(path.resolve(pdf)), '.cheatsheet'));
