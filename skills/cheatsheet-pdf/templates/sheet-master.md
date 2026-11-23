@@ -1,10 +1,9 @@
 # TITLE
 
 > **Layout standard**
-> Section colour = priority: ★★★ red · ★★ green · ★ grey · ☆ light grey.
-> Formula box: `$$!` pink (core, largest) · `$$` blue (standard) · `$$?` grey (supporting, smallest).
-> Rating basis: <papers used>, frequency × marks.
-> **Meta:** <small right-hand line; plain text or HTML entities, no inline math>
+> This file is the shape every sheet must have: chapters, then inside each chapter formulas →
+> statements → past papers. `style.js` enforces it; a section made of paragraphs fails the build.
+> **Meta:** <small right-hand line of facts, no inline math; keep the header band to one line>
 > **Footer:** <line printed under the columns>
 
 # 1 · TOPIC
@@ -17,9 +16,11 @@ $$!CORE FORMULA$$
 
 $$STANDARD FORMULA \qquad \text{(name)}$$
 
+$$?SUPPORTING FORMULA$$
+
 > **Trap.** <the mistake this section invites>
 
-## ★★★ 1.2 RULE WITH CASES (if the topic has one)
+## ★★★ 1.2 RULE WITH CASES
 
 | What you see | What it rules out | Consequence |
 |---|---|---|
@@ -30,16 +31,19 @@ $$?THE TEST THAT GOES WITH THE TABLE$$
 
 ## ★★★ 1.3 STATEMENTS TO JUDGE (one line each)
 
-- <claim> — `==keyword==` so the line is findable; one line per claim.
-- <claim> — `==keyword==`.
+- <claim> — ==keyword== so the line is findable.
+- <claim> — ==keyword==.
+- <claim> — ==keyword==.
+- <claim> — ==keyword==.
+- <claim> — ==keyword==.
 
-## ★★★ 1.4 <YEAR> Q<k> — <short title> (<marks> marks)
+## ★★★ 1.4 2024 Q2 — <short title> (12 marks)
 
 *Q.* <question stem, with the numbers of the original paper>.
 
-1. <step 1: the formula used, then the substitution>
-2. <step 2>
-3. <step 3>
+- (a) <step: the formula used, then the substitution>.
+- (b) <step>.
+- (c) <step>.
 
 > **Key** — <the one sentence that earns the marks>.
 
@@ -51,20 +55,36 @@ $$!CORE FORMULA$$
 
 $$STANDARD FORMULA$$
 
-## ★ 2.2 CONTEXT
+$$?SUPPORTING FORMULA$$
 
-<one line only>
+- <the one fact that does not fit a formula box>.
+
+## ★★ 2.2 A SECOND RESULT
+
+$$!RESULT$$
+
+*Meaning:* <one sentence>.
+
+## ★★★ 2.3 STATEMENTS TO JUDGE (one line each)
+
+- <claim> — ==keyword==.
+- <claim> — ==keyword==.
+- <claim> — ==keyword==.
 
 <!--
 Self-check before rendering - every box must be ticked:
-  [ ] every section heading carries a star run
-  [ ] chapter order follows the syllabus; inside a chapter the order is
-      formulas/theorems -> statements to judge -> past-paper questions
-  [ ] Meta / Footer lines exist; the header band is ONE line (title + a short right-hand note -
-      never a topic list: it wraps the note, grows the band and costs column height)
+  [ ] every section heading carries a star run, and the numbering is N.M with N = its chapter
+  [ ] chapter order follows the syllabus; INSIDE a chapter the order is
+      formulas/theorems -> statements to judge -> past-paper questions (style.js rejects the reverse)
+  [ ] every section is made of blocks ($$ formulas, tables, bullets) - no section is a paragraph
+  [ ] a statements section is 5-7 bullets, one line each, each with 1-2 ==keywords==
+  [ ] a past-paper section quotes the data, then 3-6 bullet steps, then one > **Key**
+  [ ] 60-76% of the sections are ★★★; ★★ is a second-tier result, ★ exists, ☆ is context
+  [ ] Meta / Footer lines exist; the header band is ONE line
   [ ] every formula fits inside ONE column; split at an "=" if it does not
   [ ] no \| inside a table row (use \mid or \lVert)
   [ ] emphasis may span inline math; it may NOT span a blank line
-  [ ] statements lines carry ==keyword== (1-2 per line), not a whole highlighted sentence
-  [ ] 20-25 KB of Markdown for a full page; prose was cut before formulas
+  [ ] layout knobs are NOT the author's business: do not pass --cols or --base; the renderer picks
+      the largest base that fills the requested pages
+  [ ] 20-35 KB of Markdown for two pages; prose was cut before formulas
 -->

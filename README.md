@@ -103,8 +103,24 @@ Intermediates go to `<output-dir>/.cheatsheet/`, which is gitignored and safe to
 
 ## Writing the Markdown
 
-The conventions are carried by
-[`templates/sheet-master.md`](skills/cheatsheet-pdf/templates/sheet-master.md) — copy it. In short:
+The shape is **enforced**, not suggested. `style.js` runs on every render (next to the lint) and
+refuses a sheet whose sections are paragraphs, whose chapters are out of order, or whose past-paper
+sections come before the formulas they use:
+
+| Rule | Value | Level |
+|---|---|---|
+| Chapters | `# N · Title`, N = 1..K, no gaps | error |
+| Sections | `## ★★★ N.M Title`, M sequential inside the chapter | error |
+| Section content | ≥ 1 block (`$$`, table, bullets) — never a paragraph | error |
+| Order inside a chapter | formulas → statements → past papers | error |
+| ★★★ share | 60–76 % of sections | warn |
+| Formula blocks per section | 3–9 | warn |
+| Statements section | one per chapter, 5–7 bullets with `==keywords==` | warn |
+| Past-paper section | 1–2 per chapter, title says `(N marks)`, ≤ 3 formula blocks | warn |
+
+The reference specimen is
+[`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,
+2 pages); copying its rhythm is faster than inventing one. In short:
 
 | Write | Renders as |
 |---|---|
@@ -115,11 +131,16 @@ The conventions are carried by
 | `$$formula$$` | standard formula — blue box |
 | `$$?formula$$` | supporting formula — grey box, smallest math |
 | `$x$` | inline math |
+| `**bold**` / `*italic*` | emphasis; it may span inline math and table cells |
+| `==keyword==` | yellow highlight for the search keyword of a statements line |
 | `*Pf.* …` / `*Meaning:* …` / `> **Trap.** …` | proof sketch / exam sentence / warning box |
 
-**Keep the teaching order.** Do not reorder by importance; the star ratings carry the priority
-signal. Rate topics by evidence — how often they appear in past papers and how many marks they
-carry — not by intuition.
+**Do not touch the layout.** Leave `--cols` and `--base` alone: the renderer searches for the
+largest base that fills the requested pages, so the same Markdown produces the same page on any
+machine. Changing those two flags is what makes two sheets look different.
+
+Rate topics by evidence — how often they appear in past papers and how many marks they carry — not
+by intuition, and aim at 76 % `★★★` (the reference share).
 
 ## Capacity dials
 

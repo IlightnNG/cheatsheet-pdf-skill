@@ -7,7 +7,7 @@
 // This is stage B: render that Markdown to a PDF and check the result.
 //
 // Options
-//   --base=<pt>    base (prose) font size                  [stylesheet: 5.5]
+//   --base=<pt>    base (prose) font size; --base=css keeps the stylesheet value   [auto]
 //   --math=<em>    math size relative to prose             [stylesheet: ~0.93]
 //   --cols=<n>     number of columns                       [stylesheet: 5]
 //   --pages=<n>    pages to fill; 1 for a single sheet      [2]
@@ -21,7 +21,7 @@
 //   --renumber     render from a renumbered copy (the master is never edited)
 //   --preview[=N]  also write <out>.pN.png so a human can look at page N
 //   --fill=<pct>   advise when a page is emptier than this (multi-page only)
-//   --base=auto    pick the largest base size that still fits the requested pages
+//   --base=auto    pick the largest base size that still fits the requested pages  [default]
 //   --quiet        only print warnings and the final summary
 //   --help         print this text
 //   --version      print the version
@@ -39,7 +39,7 @@ const TOOLS = path.join(HERE, 'tools');
 
 // ---------------------------------------------------------------- arguments
 const KNOWN = ['base', 'math', 'cols', 'pages', 'gap', 'split', 'css', 'thin', 'no-print', 'quiet', 'help', 'version',
-  'lint', 'audit', 'renumber', 'preview', 'fill'];
+  'lint', 'audit', 'renumber', 'preview', 'fill', 'no-style'];
 const argv = process.argv.slice(2);
 const flags = {};
 const positional = [];
@@ -157,9 +157,28 @@ function lint(extraArgs) {
   }
 }
 
+// The shape check runs next to the lint. Two authors who followed the same prose advice produced
+// visibly different sheets, so the conventions are enforced: chapters, section order (formulas ->
+// statements -> past papers), blocks instead of paragraphs, the star mix, and the section sizes.
+function style(extraArgs) {
+  try {
+    const out = execFileSync(process.execPath, [path.join(LIB, 'style.js'), srcMd].concat(extraArgs || []), {
+      encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000
+    });
+    const lines = out.trim().split('\n').filter(Boolean);
+    for (const l of lines) if (!quiet || /^STYLE (ERROR|\d)/.test(l)) console.log('  [style] ' + l);
+    return { ok: true, out };
+  } catch (e) {
+    const out = ((e.stdout || '') + (e.stderr || '')).trim();
+    if (out) for (const l of out.split('\n')) console.log('  [style] ' + l);
+    return { ok: false, out };
+  }
+}
+
 if (flags.audit) {
   console.log('cheatsheet: ' + path.basename(mdAbs) + '   audit');
   lint(['--structure']);
+  style();
   process.exit(0);
 }
 
@@ -171,6 +190,14 @@ const lintRes = lint();
 if (!lintRes.ok) {
   console.error('\ncheatsheet: lint found errors - fix the Markdown first (or run with --lint to see all).');
   process.exit(1);
+}
+// The shape contract is enforced, not suggested: a sheet that is paragraphs instead of modules
+// prints a visibly different page even though every gate would pass.
+const styleRes = style();
+if (!styleRes.ok) {
+  console.error('\ncheatsheet: the sheet does not have the reference shape - see the STYLE ERROR lines.');
+  console.error('  Fix the structure (chapters, section order, blocks instead of paragraphs) or pass --no-style to override.');
+  if (!flags['no-style']) process.exit(1);
 }
 if (flags.lint) {
   console.log('\ncheatsheet: --lint, stopping before the render.');
@@ -225,19 +252,35 @@ function layoutWith(basePt) {
   return { pg, buildOut, ow };
 }
 function fits(r, asked) {
-  if (!r || !r.pg) return false;
-  if (r.pg.overflow) return false;
+  if (!r) return false;
   if (r.ow && !r.ow.ok) return false;   // a page needs more columns than declared: its text is clipped
+  if (!r.pg) return true;               // one page of content: no split, so nothing to overflow
+  if (r.pg.overflow) return false;
   return (r.pg.cuts || []).every((c) => c.used <= c.cols + 0.02) && (r.pg.filled || 0) <= asked;
 }
 
 const askedPages = Number(flags.pages) || 2;
-if (String(flags.base) === 'auto') {
+// Default is auto: two authors rendering the same Markdown must land on the same page, and the base
+// size is the one dial that silently differs between machines and reruns. --base=<pt> pins it,
+// --base=css keeps whatever sheet.css says.
+const baseFlag = flags.base === undefined ? 'auto' : String(flags.base);
+if (baseFlag === 'auto') {
+  // Warm start: reuse the base the last render of this folder settled on, so an edit costs one
+  // layout pass instead of nine. Then try one step larger (an edit may have removed content), and
+  // only then scan downward.
+  let last = null;
+  try { last = Number(JSON.parse(fs.readFileSync(path.join(work, 'build.json'), 'utf8')).base) || null; } catch (e) { /* first run */ }
+  const cands = [];
+  if (last && last >= 5.0 && last <= 5.8) cands.push(Number(last.toFixed(2)), Number((last + 0.1).toFixed(2)));
+  for (let b = 5.8; b >= 5.0 - 1e-9; b -= 0.1) cands.push(Number(b.toFixed(2)));
+  const tried = new Set();
   let chosen = null;
-  for (let b = 5.8; b >= 5.0 - 1e-9; b -= 0.1) {
-    const r = layoutWith(Number(b.toFixed(2)));
+  for (const b of cands) {
+    if (tried.has(b) || b > 5.8 || b < 5.0) continue;
+    tried.add(b);
+    const r = layoutWith(b);
     if (r.buildOut && /WARNING - \d+ formula\(s\) failed/.test(r.buildOut)) break;
-    if (fits(r, askedPages)) { chosen = Number(b.toFixed(2)); break; }
+    if (fits(r, askedPages)) { chosen = b; break; }
   }
   if (chosen === null) {
     chosen = 5.0;
@@ -247,9 +290,9 @@ if (String(flags.base) === 'auto') {
   }
   env.SHEET_BASE_PT = String(chosen);
 } else {
-  console.log('  knobs      base=' + (flags.base || 'css default') + '  math=' + (flags.math || 'css default') +
+  console.log('  knobs      base=' + (baseFlag === 'css' ? 'css default' : baseFlag) + '  math=' + (flags.math || 'css default') +
               '  cols=' + (flags.cols || 'css default'));
-  const r = layoutWith(flags.base === undefined ? null : Number(flags.base));
+  const r = layoutWith(baseFlag === 'css' ? null : Number(baseFlag));
   if (r.buildOut && /WARNING - \d+ formula\(s\) failed/.test(r.buildOut)) {
     console.error('\ncheatsheet: KaTeX could not typeset every formula - fix the Markdown first.');
     process.exit(1);

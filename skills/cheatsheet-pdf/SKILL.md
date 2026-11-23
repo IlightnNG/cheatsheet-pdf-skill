@@ -68,27 +68,42 @@ $$0\xrightarrow{\ 1-\epsilon\ }0\qquad 0\xrightarrow{\ \epsilon\ }1$$
 
 The lint stage (`LINT ERROR …`) blocks the print; warnings are advice, not failures.
 
+### The shape (enforced — `style.js` runs on every render)
+
+A sheet is **chapters of sections, and every section is a stack of blocks**. The reference specimen
+is [`examples/information-theory.md`](../examples/information-theory.md) (8 chapters, 59 sections,
+2 pages); when in doubt, copy its rhythm instead of inventing one.
+
+| Rule | Value | Level |
+|---|---|---|
+| Chapters | `# N · Title`, N = 1..K, no gaps | **error** |
+| Sections | `## ★★★ N.M Title`, M sequential inside its chapter | **error** |
+| Section content | ≥ 1 block (`$$` formula, table or bullets) — **never a paragraph** | **error** |
+| Order inside a chapter | formulas/theorems → statements → past-paper questions | **error** |
+| ★★★ share | 60–76 % of sections (reference 76 %) | warn |
+| Formula blocks per section | 3–9 (reference average 3.6) | warn |
+| Statements section | one per chapter, 5–7 bullets, 1–2 `==keywords==` each | warn |
+| Past-paper section | 1–2 per chapter, title carries `(N marks)`, ≤ 3 formula blocks | warn |
+| Section size | ≤ 1400 characters (reference ≈ 670) | warn |
+
+**Do not touch the layout.** Do not pass `--cols`, and do not pass `--base`: the renderer searches
+for the largest base that fills the requested pages, so the same Markdown produces the same page on
+any machine. Passing those flags is what makes two sheets differ.
+
 ### Choosing what goes in
 
-1. **Chapter order, then type order.** Keep the syllabus order of chapters (a chapter-ordered sheet
-   is what you study from). Inside each chapter write the blocks in this order, because that is the
-   order an exam question uses them:
-   1. **formulas and theorems** (§N.1 “Formulas”, one formula per `$$` block),
-   2. **statements to judge** — the short TRUE/FALSE lines, each with `==keyword==`,
-   3. **past-paper questions**, as `## ★★★ N.k 20xx Qn — title (marks)` with the data and the steps.
-   A chapter with no past-paper question keeps 1–2 only.
-2. **Rate by evidence, not intuition.** Count how often a topic appears across the past papers and
+1. **Rate by evidence, not intuition.** Count how often a topic appears across the past papers and
    how many marks it carries. High frequency *and* high marks → `★★★`. Recurs reliably → `★★`. In
    scope but never yet examined → `★` (the "predicted new question" band). Context only → `☆`.
-3. **Spend the page roughly 60 / 25 / 15.** About 60 % of the blocks `★★★`, 25 % `★★`, the rest
-   `★`/`☆`. A sheet where everything is `★★★` has no priorities; a sheet with no `★★★` has no
-   answers.
-4. **Depth by tier**: `★★★` gets the formula *plus* one line of derivation or `*Meaning:*`; `★★`
+2. **Aim at 76 / 19 / 5.** The reference sheet is 76 % `★★★`, 19 % `★★`, 5 % `★`. A sheet where
+   everything is `★★★` has no priorities; a sheet with no `★★★` has no answers — `style.js` warns
+   outside 60–76 %.
+3. **Depth by tier**: `★★★` gets the formula *plus* one line of derivation or `*Meaning:*`; `★★`
    gets the formula and its name; `★` the statement only; `☆` one line.
-5. **Cover every examined topic**, even thinly. A topic that appeared in past papers must appear
+4. **Cover every examined topic**, even thinly. A topic that appeared in past papers must appear
    somewhere — as a formula box, or at minimum a `☆` line. Never trade a topic away for a larger
    font: cut prose instead.
-6. **A judgement table belongs in the formula part**, not buried in a worked example. If a rule has
+5. **A judgement table belongs in the formula part**, not buried in a worked example. If a rule has
    cases (`d=1` when a column is zero, `d≥2` without a zero column, …), give it its own `$$`/table
    block under the chapter's formulas, then let the example refer to it.
 
@@ -119,7 +134,7 @@ node skills/cheatsheet-pdf/scripts/cheatsheet.js <name>.md <name>.pdf --cols=5 -
 node skills/cheatsheet-pdf/scripts/verify.js <name>.pdf
 ```
 
-Flags: `--cols=<n>` columns · `--pages=<n>` pages to fill (**default 2**) · `--base=<pt>` prose size
+Flags: `--cols=<n>` columns · `--pages=<n>` pages to fill (**default 2**) · `--base=<pt>` prose size (default `auto`: the largest size that fills the pages; `--base=css` keeps the stylesheet value)
 (`--base=auto` searches for the largest size that still fits) · `--gap=<mm>` gutter · `--math=<em>`
 math size relative to prose · `--no-print` measure only · `--lint` static checks only (no PDF) ·
 `--audit` print the chapter/section/question structure · `--renumber` render from a renumbered copy
@@ -146,6 +161,9 @@ offending content: `--base=auto` is a *consequence* of too much content, not a c
 | `lint found errors` (`glyph`) | a `─ │ →` sits outside math — use `\xrightarrow` in a `$$` block |
 | `lint found errors` (`structure`) | section numbers drifted — add `--renumber` |
 | `lint found errors` (`duplicate`) | the same past-paper question twice — merge, or split with `(a)(b)` markers |
+| `STYLE ERROR shape` | a section with no `$$`/table/bullet — rewrite it as blocks, never as a paragraph |
+| `STYLE ERROR order` | a formula section after the statements or past-paper sections — reorder the chapter |
+| `STYLE ERROR chapters` | a chapter heading was lost, so two chapters merged |
 | `KaTeX could not typeset every formula` | an unbalanced brace or a trailing `\` in a `$$` block |
 | `the content needs more than N page(s)` | `--base=auto`, cut in the documented order, or `--pages=N+1` |
 | `verify: … is the build for "x.pdf", not "y.pdf"` | one `.cheatsheet/` per folder — re-render, or `--work=<dir>` |
@@ -177,7 +195,8 @@ Two passes converge. Sweeping twenty combinations means the advice was ignored.
 ## Before you deliver
 
 1. `--lint` reports **0 errors** (a literal `**`, a glyph the font lacks, a numbering gap, a
-   duplicated past-paper question).
+   duplicated past-paper question) and **`STYLE` 0 errors** (chapters, section order, blocks instead
+   of paragraphs).
 2. `--audit` shows chapters 1..N in order, sections numbering without gaps, and each past-paper
    question once (a question split across two chapters must say so in its titles, e.g.
    `2023 Q2 (a)(b) — source part` / `2023 Q2 (c)(d) — extraction`).

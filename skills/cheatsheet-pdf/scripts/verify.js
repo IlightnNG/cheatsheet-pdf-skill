@@ -156,7 +156,9 @@ if (Number(thin) > 0 && ruleRows.length) {
   const worst = Math.max(...ruleRows.map((r) => r.h));
   const total = ruleRows.reduce((a, r) => a + r.n, 0);
   const atThin = ruleRows.filter((r) => Math.abs(r.h - Number(thin)) < 0.02).reduce((a, r) => a + r.n, 0);
-  record('hairlines thinned to ' + thin + 'pt', worst <= 1.05,
+  // atThin > 0 matters: a run where thinrules silently found nothing leaves every rule at 1 pt, and
+  // "worst <= 1.05" alone would pass it.
+  record('hairlines thinned to ' + thin + 'pt', worst <= 1.05 && atThin > 0,
          total + ' rule fill(s): ' + atThin + ' at ' + thin + 'pt, worst ' + worst.toFixed(3) +
          'pt' + (worst > 1.05 ? '' : ' (1pt fills are arrow shafts / snapped rules)'));
 } else {
