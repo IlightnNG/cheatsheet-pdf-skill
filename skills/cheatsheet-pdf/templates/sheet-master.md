@@ -1,8 +1,9 @@
 # TITLE
 
 > **Layout standard**
-> This file is the shape every sheet must have: chapters, then inside each chapter formulas →
-> statements → past papers. `style.js` enforces it; a section made of paragraphs fails the build.
+> This is the recommended shape: chapters, then inside each chapter formulas → statements → past
+> papers, every section built from blocks. `style.js` reports how far a sheet drifts from it; a
+> different structure still prints. Copy this file to start, then adapt freely.
 > **Meta:** <small right-hand line of facts, no inline math; keep the header band to one line>
 > **Footer:** <line printed under the columns>
 
@@ -84,7 +85,9 @@ Self-check before rendering - every box must be ticked:
   [ ] every formula fits inside ONE column; split at an "=" if it does not
   [ ] no \| inside a table row (use \mid or \lVert)
   [ ] emphasis may span inline math; it may NOT span a blank line
-  [ ] layout knobs are NOT the author's business: do not pass --cols or --base; the renderer picks
-      the largest base that fills the requested pages
+  [ ] layout knobs are free: --cols/--base/--gap may be passed; the defaults reproduce the specimen
+      (--base=auto picks the largest size that fills the requested pages)
+  [ ] colour/boxes/dividers/typeface are theme tokens: leave them alone unless you also pass
+      --theme=any, which tells the checks the new look is deliberate
   [ ] 20-35 KB of Markdown for two pages; prose was cut before formulas
 -->

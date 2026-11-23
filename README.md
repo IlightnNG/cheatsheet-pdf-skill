@@ -103,20 +103,20 @@ Intermediates go to `<output-dir>/.cheatsheet/`, which is gitignored and safe to
 
 ## Writing the Markdown
 
-The shape is **enforced**, not suggested. `style.js` runs on every render (next to the lint) and
-refuses a sheet whose sections are paragraphs, whose chapters are out of order, or whose past-paper
-sections come before the formulas they use:
+Content is **yours**; the look is not. `style.js` measures the sheet against the specimen and prints
+`STYLE WARN` advice — it never blocks a sheet you meant to write that way. `--strict-style` turns it
+into errors for a team that must match exactly.
 
-| Rule | Value | Level |
-|---|---|---|
-| Chapters | `# N · Title`, N = 1..K, no gaps | error |
-| Sections | `## ★★★ N.M Title`, M sequential inside the chapter | error |
-| Section content | ≥ 1 block (`$$`, table, bullets) — never a paragraph | error |
-| Order inside a chapter | formulas → statements → past papers | error |
-| ★★★ share | 60–76 % of sections | warn |
-| Formula blocks per section | 3–9 | warn |
-| Statements section | one per chapter, 5–7 bullets with `==keywords==` | warn |
-| Past-paper section | 1–2 per chapter, title says `(N marks)`, ≤ 3 formula blocks | warn |
+| Rule (advice) | Reference value |
+|---|---|
+| Chapters | `# N · Title`, N = 1..K, no gaps |
+| Sections | `## ★★★ N.M Title`, M sequential inside the chapter |
+| Section content | ≥ 1 block (`$$`, table, bullets) rather than paragraphs |
+| Order inside a chapter | formulas → statements → past papers |
+| ★★★ share | 76 % of sections |
+| Formula blocks per section | average 3.6 (3–9) |
+| Statements section | one per chapter, 5–7 bullets with `==keywords==` |
+| Past-paper section | 1–2 per chapter, title says `(N marks)`, steps as bullets |
 
 The reference specimen is
 [`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,
@@ -135,9 +135,9 @@ The reference specimen is
 | `==keyword==` | yellow highlight for the search keyword of a statements line |
 | `*Pf.* …` / `*Meaning:* …` / `> **Trap.** …` | proof sketch / exam sentence / warning box |
 
-**Do not touch the layout.** Leave `--cols` and `--base` alone: the renderer searches for the
-largest base that fills the requested pages, so the same Markdown produces the same page on any
-machine. Changing those two flags is what makes two sheets look different.
+**Layout is yours.** The defaults (`--cols=5`, `--base=auto`, 5 mm margins, landscape A4, 2 pages)
+reproduce the specimen; `--base=auto` is what makes the same Markdown land on the same page anywhere.
+Pass `--cols`, `--base`, `--gap` freely when you want a denser or airier page.
 
 Rate topics by evidence — how often they appear in past papers and how many marks they carry — not
 by intuition, and aim at 76 % `★★★` (the reference share).
@@ -157,8 +157,11 @@ holds:
 | `--no-print` | measure only, no PDF | off |
 | `--split` | experimental formula line breaking | off |
 | `--thin` | printed hairline thickness in pt; `0` disables | 0.25 |
-| `--base=auto` | search for the largest `--base` that still fits the requested pages | off |
+| `--base=auto` | search for the largest `--base` that still fits the requested pages | on |
 | `--lint` | static checks only (markup leaks, missing glyphs, numbering), no PDF | off |
+| `--strict-style` | turn the shape advice into hard errors | off |
+| `--theme=any` | declare a custom palette (skip the reference theme check) | off |
+| `--no-style` | skip the shape report entirely | off |
 | `--audit` | print the chapter / section / past-paper structure, then exit | off |
 | `--renumber` | render from a renumbered copy (the master is never edited) | off |
 | `--preview[=N]` | also write `<out>.pN.png` so a human can look at page N | off |
@@ -205,15 +208,26 @@ Everything visual lives in one file: [`sheet.css`](skills/cheatsheet-pdf/scripts
 value, re-run `cheatsheet.js`, then `verify.js`. Reference the rules by **selector** — line numbers
 drift.
 
+**Layout** (columns, base size, gaps, paper, margins) is free: flags and CSS both work, and
+`--base=auto` simply picks the largest size that fills the requested pages.
+
+**Colour, box fills, dividers and the typeface are pinned** so a first sheet looks like the
+reference. Twenty tokens are checked on every render by
+[`lib/theme.js`](skills/cheatsheet-pdf/scripts/lib/theme.js); `verify.js` gates them. To restyle on
+purpose, change the rule, then pass `--theme=any` (and `verify.js --theme=any`) so the check knows it
+was deliberate. `node skills/cheatsheet-pdf/scripts/lib/theme.js` prints exactly which token differs
+from the reference.
+
 | Want to change | Edit this rule | Notes |
 |---|---|---|
 | Paper size or orientation | `@page { size: … }` **and** `.page { width/height }` | Change both: `@page` sets the PDF box, `.page` sets the layout box. Do it in an overlay file and pass `--css=`; see [`examples/portrait.css`](examples/portrait.css). |
 | Number of columns | `--cols` (or `.flow { column-count }`) | Prefer the flag. Fewer columns = wider ones; for formula-heavy sheets that alone can fill the page. |
 | Text size | `--base` (or `.page { font-size }`) | Everything else is in `em`, so one number moves the whole sheet. |
+| Margins | `.page { padding }` | 5 mm by default: most printers clip below that. |
 | Math size | `--math` (or the `.katex` rules under "Math sizing") | Math is sized per context. The hierarchy is measured against **inline math in prose** (the 0.85 em reference) — the grey supporting formula must not come out smaller than that. Boxed math may sit below the body text size; that is deliberate. |
-| Body typeface | `.page { font-family }` | Headings and captions use their own `font-family` (`h1`, `h2`, `th`, `.legend`). |
-| Core-formula colour | `.fxc { background / border-left }` | `.fxd` is the standard formula box, `.fxs` the supporting one. |
-| Section priority colours | `h2.p3`, `h2.p2`, `h2.p1`, `h2.p0` | ★★★, ★★, ★, ☆ respectively. The priority scale is **colour-only** — it does not change the font size. |
+| Body typeface | `.page { font-family }` | **theme token** — needs `--theme=any`. Headings and captions use their own `font-family` (`h1`, `h2`, `th`, `.legend`). |
+| Core-formula colour | `.fxc { background / border-left }` | **theme token**. `.fxd` is the standard formula box, `.fxs` the supporting one. |
+| Section priority colours | `h2.p3`, `h2.p2`, `h2.p1`, `h2.p0` | **theme tokens**: ★★★, ★★, ★, ☆. The priority scale is **colour-only** — it does not change the font size. |
 | Title, right-hand note, footer | the `> **Meta:**` / `**Footer:**` lines in the Markdown (a `> **Header:**` line adds a short subtitle after the title — keep it brief: a long one wraps the note and costs column height) | Or override with `SHEET_TITLE` / `SHEET_SUBTITLE` / `SHEET_META` / `SHEET_FOOTER`. |
 | Chinese or Japanese text | wrap it in `<span class="zh">…</span>` | A CJK class is already defined (`.zh`); for another script add its family there. Chinese renders without it too — the class just pins the typeface. |
 
@@ -231,7 +245,7 @@ Portrait takes fewer, wider columns than landscape — here two at 6 pt fill the
 
 ## Verification
 
-`verify.js` reports eleven gates:
+`verify.js` reports twelve gates:
 
 | Gate | What it stops |
 |---|---|
@@ -246,6 +260,7 @@ Portrait takes fewer, wider columns than landscape — here two at 6 pt fill the
 | exactly N pages | a page count nobody asked for |
 | A4 page | the wrong paper size |
 | math fonts embedded | KaTeX glyphs that would print as boxes |
+| theme matches the reference | a colour, box fill, divider or typeface that drifted from the specimen (declare `--theme=any` when the change is deliberate) |
 
 All must pass before you print. Each render stamps `.cheatsheet/build.json` with the PDF it produced:
 pointing `verify.js` at a PDF whose sheet is not the one in that folder stops with an error instead

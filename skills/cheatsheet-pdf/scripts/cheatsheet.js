@@ -17,6 +17,8 @@
 //   --thin=<pt>    rewrite PDF hairlines to this thickness; 0 disables   [0.25]
 //   --no-print     stop after measuring (layout dry run, no PDF)
 //   --lint         static checks only (markup leaks, glyphs, numbering); no PDF
+//   --strict-style turn the shape advice into hard errors (for a class or a team)
+//   --theme=any    declare a custom theme (changes colours/boxes away from the reference)
 //   --audit        print the chapter/section/question structure, then exit
 //   --renumber     render from a renumbered copy (the master is never edited)
 //   --preview[=N]  also write <out>.pN.png so a human can look at page N
@@ -39,7 +41,7 @@ const TOOLS = path.join(HERE, 'tools');
 
 // ---------------------------------------------------------------- arguments
 const KNOWN = ['base', 'math', 'cols', 'pages', 'gap', 'split', 'css', 'thin', 'no-print', 'quiet', 'help', 'version',
-  'lint', 'audit', 'renumber', 'preview', 'fill', 'no-style'];
+  'lint', 'audit', 'renumber', 'preview', 'fill', 'no-style', 'strict-style', 'theme'];
 const argv = process.argv.slice(2);
 const flags = {};
 const positional = [];
@@ -157,9 +159,9 @@ function lint(extraArgs) {
   }
 }
 
-// The shape check runs next to the lint. Two authors who followed the same prose advice produced
-// visibly different sheets, so the conventions are enforced: chapters, section order (formulas ->
-// statements -> past papers), blocks instead of paragraphs, the star mix, and the section sizes.
+// The shape check runs next to the lint, but as ADVICE: the reference sheet is a recommended
+// template, and a user who wants three chapters or no statements section is allowed to have one.
+// --strict-style is the opt-in for the people who must match the specimen exactly.
 function style(extraArgs) {
   try {
     const out = execFileSync(process.execPath, [path.join(LIB, 'style.js'), srcMd].concat(extraArgs || []), {
@@ -171,6 +173,23 @@ function style(extraArgs) {
   } catch (e) {
     const out = ((e.stdout || '') + (e.stderr || '')).trim();
     if (out) for (const l of out.split('\n')) console.log('  [style] ' + l);
+    return { ok: false, out };
+  }
+}
+
+// The visual identity is not advice: if the colours, box fills, dividers or typeface drift, the page
+// stops looking like the reference even when every content rule is followed. Reported after the
+// build, because the theme is what the printed HTML actually used.
+function theme() {
+  try {
+    const out = execFileSync(process.execPath, [path.join(LIB, 'theme.js')], {
+      encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000
+    });
+    for (const l of out.trim().split('\n')) console.log('  [theme] ' + l);
+    return { ok: true, out };
+  } catch (e) {
+    const out = ((e.stdout || '') + (e.stderr || '')).trim();
+    if (out) for (const l of out.split('\n')) console.log('  [theme] ' + l);
     return { ok: false, out };
   }
 }
@@ -191,13 +210,14 @@ if (!lintRes.ok) {
   console.error('\ncheatsheet: lint found errors - fix the Markdown first (or run with --lint to see all).');
   process.exit(1);
 }
-// The shape contract is enforced, not suggested: a sheet that is paragraphs instead of modules
-// prints a visibly different page even though every gate would pass.
-const styleRes = style();
-if (!styleRes.ok) {
-  console.error('\ncheatsheet: the sheet does not have the reference shape - see the STYLE ERROR lines.');
-  console.error('  Fix the structure (chapters, section order, blocks instead of paragraphs) or pass --no-style to override.');
-  if (!flags['no-style']) process.exit(1);
+// The shape contract is advice: a sheet that is paragraphs instead of modules still prints, it just
+// stops looking like the specimen. --strict-style turns the advice into errors.
+if (!flags['no-style']) {
+  const styleRes = style(flags['strict-style'] ? ['--strict'] : []);
+  if (!styleRes.ok && flags['strict-style']) {
+    console.error('\ncheatsheet: --strict-style and the sheet does not have the reference shape.');
+    process.exit(1);
+  }
 }
 if (flags.lint) {
   console.log('\ncheatsheet: --lint, stopping before the render.');
@@ -297,6 +317,17 @@ if (baseFlag === 'auto') {
     console.error('\ncheatsheet: KaTeX could not typeset every formula - fix the Markdown first.');
     process.exit(1);
   }
+}
+
+// The visual identity is a contract, not advice: same colours, same box fills, same dividers, same
+// typeface as the reference sheet. A user who wants a different look says so with --theme=any, which
+// keeps the check honest without blocking customisation.
+const themeRes = theme();
+if (!themeRes.ok && !flags.theme) {
+  console.error('\ncheatsheet: the theme differs from the reference (see the DIFF lines above).');
+  console.error('  If this is intentional, pass --theme=any; otherwise restore the tokens in sheet.css');
+  console.error('  (they are listed in lib/theme.js) or drop the --css overlay that changed them.');
+  process.exit(1);
 }
 
 // measure.js writes the geometry numbers that --fill and the ADVICE lines are based on.

@@ -68,27 +68,52 @@ $$0\xrightarrow{\ 1-\epsilon\ }0\qquad 0\xrightarrow{\ \epsilon\ }1$$
 
 The lint stage (`LINT ERROR …`) blocks the print; warnings are advice, not failures.
 
-### The shape (enforced — `style.js` runs on every render)
+### The visual identity (enforced — `theme.js` runs on every render)
+
+Content is yours; the **look** is not. `lib/theme.js` pins the twenty tokens that make the page
+recognisable and `verify.js` gates them:
+
+| Token | Value |
+|---|---|
+| body typeface | Cambria / Georgia / Times New Roman, serif |
+| ★★★ / ★★ / ★ / ☆ section bars | `#b02020` / `#0d6b3a` / `#5a6a7a` / `#e2e6ea` |
+| core formula box `.fxc` | fill `#fdeaea`, left rule `1.7pt solid #b02020` |
+| standard box `.fxd` | fill `#eef3fb`, left rule `1.3pt solid #1a3a6b` |
+| supporting box `.fxs` | fill `#f6f7f8`, left rule `0.8pt solid #c3c9cf` |
+| trap / quote box `.q` | fill `#fffaf0`, left rule `0.9pt solid #c07000` |
+| header rule | `1.2pt solid #1a3a6b` |
+| `code` / `mark` | `#eef1f5` / `#ffe9a4` |
+
+Want a different look? Edit those rules in `sheet.css` (or ship a `--css` overlay), then run with
+`--theme=any` and `verify.js --theme=any`. `node skills/cheatsheet-pdf/scripts/lib/theme.js` prints
+exactly which token differs. **Layout** (columns, base size, margins, paper) is not a theme token —
+those flags are free for anyone to change.
+
+### The shape (recommended — `style.js` advises)
+
+
 
 A sheet is **chapters of sections, and every section is a stack of blocks**. The reference specimen
 is [`examples/information-theory.md`](../examples/information-theory.md) (8 chapters, 59 sections,
-2 pages); when in doubt, copy its rhythm instead of inventing one.
+2 pages). These rules are **advice**: follow them and the page reads like the specimen; ignore them
+and it still prints. `--strict-style` turns them into errors when a team must match exactly.
 
-| Rule | Value | Level |
+| Rule | Value | Advice |
 |---|---|---|
-| Chapters | `# N · Title`, N = 1..K, no gaps | **error** |
-| Sections | `## ★★★ N.M Title`, M sequential inside its chapter | **error** |
-| Section content | ≥ 1 block (`$$` formula, table or bullets) — **never a paragraph** | **error** |
-| Order inside a chapter | formulas/theorems → statements → past-paper questions | **error** |
-| ★★★ share | 60–76 % of sections (reference 76 %) | warn |
-| Formula blocks per section | 3–9 (reference average 3.6) | warn |
-| Statements section | one per chapter, 5–7 bullets, 1–2 `==keywords==` each | warn |
-| Past-paper section | 1–2 per chapter, title carries `(N marks)`, ≤ 3 formula blocks | warn |
-| Section size | ≤ 1400 characters (reference ≈ 670) | warn |
+| Chapters | `# N · Title`, N = 1..K, no gaps | advice |
+| Sections | `## ★★★ N.M Title`, M sequential inside its chapter | advice |
+| Section content | ≥ 1 block (`$$` formula, table or bullets) rather than paragraphs | advice |
+| Order inside a chapter | formulas/theorems → statements → past-paper questions | advice |
+| ★★★ share | 60–76 % of sections (reference 76 %) | advice |
+| Formula blocks per section | 3–9 (reference average 3.6) | advice |
+| Statements section | one per chapter, 5–7 bullets, 1–2 `==keywords==` each | advice |
+| Past-paper section | 1–2 per chapter, title carries `(N marks)`, ≤ 3 formula blocks | advice |
+| Section size | ≤ 2200 characters (reference ≈ 670) | advice |
 
-**Do not touch the layout.** Do not pass `--cols`, and do not pass `--base`: the renderer searches
-for the largest base that fills the requested pages, so the same Markdown produces the same page on
-any machine. Passing those flags is what makes two sheets differ.
+**Layout is yours.** The defaults (`--cols=5`, `--base=auto`, 5 mm margins, A4 landscape, 2 pages)
+reproduce the specimen, and `--base=auto` is what makes the same Markdown land on the same page
+anywhere. If you want a denser or airier page, pass `--cols`/`--base`/`--gap` freely - only the
+theme is locked.
 
 ### Choosing what goes in
 
@@ -161,9 +186,9 @@ offending content: `--base=auto` is a *consequence* of too much content, not a c
 | `lint found errors` (`glyph`) | a `─ │ →` sits outside math — use `\xrightarrow` in a `$$` block |
 | `lint found errors` (`structure`) | section numbers drifted — add `--renumber` |
 | `lint found errors` (`duplicate`) | the same past-paper question twice — merge, or split with `(a)(b)` markers |
-| `STYLE ERROR shape` | a section with no `$$`/table/bullet — rewrite it as blocks, never as a paragraph |
-| `STYLE ERROR order` | a formula section after the statements or past-paper sections — reorder the chapter |
-| `STYLE ERROR chapters` | a chapter heading was lost, so two chapters merged |
+| `STYLE WARN shape` | a section with no `$$`/table/bullet — it prints, it just will not look like the specimen |
+| `STYLE WARN order` | a formula section after the statements/past papers — the specimen puts them first |
+| `STYLE ERROR …` | only with `--strict-style`; without it every shape problem is advice |
 | `KaTeX could not typeset every formula` | an unbalanced brace or a trailing `\` in a `$$` block |
 | `the content needs more than N page(s)` | `--base=auto`, cut in the documented order, or `--pages=N+1` |
 | `verify: … is the build for "x.pdf", not "y.pdf"` | one `.cheatsheet/` per folder — re-render, or `--work=<dir>` |
@@ -203,7 +228,7 @@ Two passes converge. Sweeping twenty combinations means the advice was ignored.
 3. Every past-paper topic appears somewhere on the page.
 4. The three tiers are visibly used — a reader can tell in five seconds what must be memorised.
 5. Every `★★★` formula has a derivation line or a `*Meaning:*`.
-6. `verify.js` reports 11/11 PASS. On a multi-page sheet the relevant capacity gate is *"no page over
+6. `verify.js` reports 12/12 PASS (the theme gate needs `--theme=any` when you changed the palette on purpose). On a multi-page sheet the relevant capacity gate is *"no page over
    its column budget"*; the flow-width number in the detail line is expected to exceed one page.
 7. **Look at the rendered page** (`--preview` writes `out.p1.png`, `--preview=2` writes `out.p2.png`).
    The gates measure geometry; they cannot see a glyph that failed to embed or a highlight that did

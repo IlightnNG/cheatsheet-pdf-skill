@@ -63,6 +63,18 @@ console.log('\n  defaults   ' + (portrait ? 'portrait' : 'landscape A4') +
             '  cols=' + (cols ? cols[1] : '?') + '  base=' + (base ? base[1] + 'pt' : '?') +
             '  margin=' + (pad ? pad[1].trim() : '?') + '  pages=2');
 
+// ---- theme (informational: a custom palette is allowed, it is just reported)
+try {
+  const t = execFileSync(process.execPath, [path.join(LIB, 'theme.js')], {
+    encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    env: Object.assign({}, process.env, { SHEET_DIR: '' })
+  });
+  const m = /(\d+) token\(s\) differ/.exec(t);
+  const n = m ? Number(m[1]) : 0;
+  if (n === 0) ok('theme', 'all reference colour/typeface tokens match');
+  else console.log('  note  theme      ' + n + ' token(s) differ from the reference (custom palette; pass --theme=any to verify)');
+} catch (e) { /* theme.js is optional */ }
+
 // ---- smoke
 if (smoke) {
   const example = path.join(REPO, 'examples', 'regression.md');

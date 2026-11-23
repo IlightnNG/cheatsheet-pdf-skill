@@ -76,9 +76,19 @@ const sheetBody = sheetHtml.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<!
 const leftMarkers = (sheetBody.match(/\$\$[!?]/g) || []).length;
 record('display markers consumed', leftMarkers === 0, leftMarkers + ' leftover "$$!"/"$$?"');
 // ---- 1. no formula wrapped mid-formula
-const wrap = tool('wrapcheck.js');
-record('no formula wrapped', /no formula wrapped/.test(wrap),
+const wrap = tool('wrapcheck.js');record('no formula wrapped', /no formula wrapped/.test(wrap),
        (wrap.match(/WRAP\d+[^\n]*/g) || []).length + ' wrapped');
+
+// ---- 1c. the visual identity matches the reference sheet
+// Colours, box fills, dividers and the typeface are what make two sheets look different once the
+// conventions are followed, so they are checked. A custom look is allowed, but must be declared:
+//   node verify.js <out.pdf> --theme=any
+const themeOut = (() => { try { return execFileSync(process.execPath, [path.join(LIB, 'theme.js')], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { return (e.stdout || '') + (e.stderr || ''); } })();
+const themeDiff = (themeOut.match(/DIFF[^\n]*/g) || []).length;
+const themeOk = /0 token\(s\) differ/.test(themeOut);
+record('theme matches the reference', themeOk || flags.theme === 'any',
+       themeOk ? 'all reference tokens match' :
+       'custom theme (' + themeDiff + ' token(s) changed, --theme=any)');
 
 // ---- 2. no punctuation stranded on its own line
 const orph = tool('orphans.js');
