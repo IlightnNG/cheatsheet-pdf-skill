@@ -50,13 +50,15 @@ $$STANDARD FORMULA$$
 
 > **Key** — <the one sentence that earns the marks>.
 
-## ★★★ 1.5 Worked example — <formula> with numbers
+## ★★★ 1.5 Worked example — four results on one dataset
 
-*Scenario.* <one line: the object, the numbers>.
+*Data.* <one line: the table or matrix the whole drill uses>.
 
-- (a) <the formula, then the numbers substituted>.
-- (b) <the intermediate value>.
-- (c) Check: <a sanity check against a known case>.
+| formula | with the numbers | value |
+|---|---|---|
+| <formula 1> | <substitution> | <value> |
+| <formula 2> | <substitution> | <value> |
+| <formula 3> | <substitution> | <value> |
 
 # 2 · TOPIC
 

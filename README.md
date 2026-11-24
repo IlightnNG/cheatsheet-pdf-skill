@@ -121,7 +121,7 @@ into errors for a team that must match exactly.
 | Formula blocks | ≥ 6 per chapter (average 3.6 per section) |
 | Statements to judge | exactly one per chapter, 5–7 bullets with `==keywords==` |
 | Worked example | 1–2 per chapter, steps as bullets, numbers substituted |
-| Formula drill | one per chapter with a computable formula — a scenario, the substitution, a sanity check |
+| Formula drill | one per chapter: **one dataset, several related formulas** computed in a `formula / with the numbers / value` table — the densest way to cover formulas |
 
 The reference specimen is
 [`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,

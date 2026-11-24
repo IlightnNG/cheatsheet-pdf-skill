@@ -48,10 +48,12 @@ $$?I(X:Y)=H(Y)-H(Y\vert X)$$
 
 > **Key** — capacity is the supremum of reliable rates.
 
-## ★★★ 2.4 Worked example — the BSC capacity with numbers
+## ★★★ 2.4 Worked example — three BSC numbers on one channel
 
-*Scenario.* A BSC flips each bit with $\epsilon=0.1$; what rate can be trusted?
+*Data.* A BSC with $\epsilon=0.1$, used $n=1000$ times.
 
-- (a) $h_2(0.1)=0.469$.
-- (b) $C=1-0.469=0.531$ bits per channel use.
-- (c) Check: at $\epsilon=\tfrac12$, $h_2=1$ and $C=0$ — the worst channel, as expected.
+| formula | with the numbers | value |
+|---|---|---|
+| $h_2(\epsilon)$ | $-(0.1\log 0.1+0.9\log 0.9)$ | 0.469 |
+| $C=1-h_2(\epsilon)$ | $1-0.469$ | 0.531 bit/use |
+| $nC$ | $1000\cdot0.531$ | 531 bit |

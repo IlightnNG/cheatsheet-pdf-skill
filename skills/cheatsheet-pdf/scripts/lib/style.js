@@ -55,6 +55,7 @@ lines.forEach((l, i) => {
   if (!sec) return;
   const t = l.trim();
   sec.chars += l.length;
+  sec.digits = (sec.digits || 0) + (t.match(/\d/g) || []).length;
   if (/^\$\$[!?]?/.test(t)) { sec.formulas++; if (cur) cur.formulas++; }
   else if (/^- /.test(t) || /^\d+\.\s/.test(t)) sec.bullets++;
   else if (/^\|/.test(t)) sec.tables++;
@@ -110,6 +111,12 @@ for (const c of chapters) {
   if (!drills.length && c.sections.some((s) => s.exam)) {
     add('skeleton', 'chapter ' + c.n + ' has past-paper questions but no formula drill - add ' +
       '"## ★★★ N.x Worked example — <formula> with numbers" showing the arithmetic step by step', false);
+  }
+  for (const d of drills) {
+    if ((d.digits || 0) < 3) {
+      add('skeleton', 'drill "' + d.title + '" carries almost no numbers (' + (d.digits || 0) +
+        ' digit(s)) - a drill is a data walk-through: one dataset, then each formula with the values substituted', false);
+    }
   }
   if (!c.sections.some((s) => s.example)) {
     add('skeleton', 'chapter ' + c.n + ' has no worked example - add "## ★★★ N.x 2024 Q2 — title (12 marks)" ' +

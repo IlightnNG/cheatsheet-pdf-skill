@@ -133,7 +133,7 @@ live inside the chapter they belong to** — never in one block after the last c
 |---|---|---|
 | formula / theorem sections | yes | ≥ 6 formula blocks per chapter, split into 2–4 sections |
 | `Statements to judge` | yes | exactly one per chapter, 5–7 one-line claims |
-| worked example | yes | 1–2 per chapter: a past paper (`20xx Qn — title (N marks)`) and/or a **formula drill** (`Worked example — <formula> with numbers`), steps as bullets, numbers substituted |
+| worked example | yes | 1–2 per chapter: a past paper (`20xx Qn — title (N marks)`) and/or a **drill** (`Worked example — <topic> with numbers`): one dataset, several formulas, substituted values in a table |
 | header facts (`> **Meta:**`) | yes | one line |
 
 **Only a chapter may use `#`.** `# Appendix`, `# Quiz corner`, `# Extra practice`, `# Summary` all
@@ -143,28 +143,43 @@ If a topic does not fit, it belongs in a chapter; if it does not belong to a cha
 
 ### Two kinds of example (both belong in a chapter)
 
-A past-paper question proves the topic was examined; a **formula drill** teaches the arithmetic. The
-sheet wants one of each where the chapter allows it:
+A past-paper question proves the topic was examined; a **drill** teaches the arithmetic. They are
+not the same shape, and the drill is the denser of the two:
+
+| Kind | Title | Shape |
+|---|---|---|
+| past paper | `20xx Qn — <topic> (N marks)` | the original parts, one `> **Key**` |
+| **drill** | `Worked example — <topic> with numbers` | **one dataset, several related formulas in a row**, no parts, no theory |
+
+A drill is a **class of computation**, not a single question: hand it one table or matrix and walk
+*all* the formulas of the section on that data. That is what raises formula coverage while using
+less space than a second exam question.
 
 ```markdown
-## ★★★ 5.10 2023 Q3 — a code over F4 (10 marks)          <- past paper: the whole question
+## ★★★ 1.6 Worked example — four entropies on one joint table
 
-## ★★★ 5.11 Worked example — the Hamming bound with numbers   <- drill: one formula, all the steps
-*Scenario.* A binary code, n = 7, d = 3, |C| = 16.
-1. t = floor((d-1)/2) = 1.
-2. V_2(1) = 1 + 7 = 8.
-3. Hamming: |C| <= 2^7 / 8 = 16 — the code is at the bound, so it is perfect.
+*Data.* P_XY: (0,0)=1/2, (0,1)=1/4, (1,0)=1/4, (1,1)=0.
+
+| formula | with the numbers | value |
+|---|---|---|
+| P_X, P_Y | column/row sums | (3/4, 1/4) |
+| H(X) = -Σ p log p | -(3/4 log 3/4 + 1/4 log 1/4) | 0.811 |
+| H(XY) | 1/2·1 + 2·(1/4·2) | 1.500 |
+| I(X:Y) = H(X)+H(Y)-H(XY) | 0.811 + 0.811 - 1.500 | 0.123 |
+| H_min(X|Y) = -log p_guess | p_guess = 3/4·2/3 + 1/4·1 | 0.415 |
 ```
 
-| Kind | Title | Contents |
-|---|---|---|
-| past paper | `20xx Qn — <topic> (N marks)` | the original numbers, the parts, one `> **Key**` |
-| formula drill | `Worked example — <formula> with numbers` | a one-line *Scenario*, then numbered substitutions, then a one-line sanity check |
+Rules that make it worth the space:
 
-A drill is small (3–6 lines) and its value is the **substitution**, not the theory: pick the numbers
-so they divide cleanly, write every intermediate value, and end with a check ("the bound is met, so
-the code is perfect"). Aim for one drill in every chapter that has a computable formula, even when a
-past paper already covers it — this is the part a reader reproduces under exam pressure.
+- **one dataset for the whole drill** — a table or a matrix at the top, then every formula reads
+  from it; a second dataset doubles the space and teaches nothing new;
+- **numbers that divide cleanly** (halves, quarters, 2^n) so the reader can follow without a
+  calculator; write the intermediate value, never just the answer;
+- **end with the formula an exam would actually ask for** (here `I(X:Y)`), so the last line is the
+  one to remember;
+- 4–6 formulas in a drill is normal; prose is capped at the one-line *Data.* and a trailing
+  sanity check ("at ε = 1/2 the capacity is 0, as expected").
+- a drill **must contain data**: `style.js` reports one that carries almost no numbers.
 
 ### Priority when the page is full
 

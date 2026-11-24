@@ -92,6 +92,13 @@ const cases = [
     expect: /no formula drill/,
   },
   {
+    name: 'a drill without data is reported',
+    file: 'drill-prose.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /carries almost no numbers/,
+  },
+  {
     name: 'a drill counts as the worked example',
     file: 'good.md',
     run: 'style',
