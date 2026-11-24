@@ -115,6 +115,53 @@ reproduce the specimen, and `--base=auto` is what makes the same Markdown land o
 anywhere. If you want a denser or airier page, pass `--cols`/`--base`/`--gap` freely - only the
 theme is locked.
 
+### What every chapter contains (the skeleton)
+
+A chapter is not "some text"; it is a fixed stack of blocks, and **the statements and the example
+live inside the chapter they belong to** — never in one block after the last chapter:
+
+```markdown
+# 3 · Hypothesis testing (Ch.3)
+
+## ★★★ 3.1 Formulas and theorems          <- ≥ 6 blocks, one formula per $$ block
+## ★★★ 3.2 A second result family         <- as many formula sections as the topic needs
+## ★★★ 3.3 Statements to judge (one line each)   <- 5-7 single-line claims, each with ==keyword==
+## ★★★ 3.4 2024 Q2 — Neyman-Pearson on a table (12 marks)   <- worked example, numbers, bullets
+```
+
+| Block | Required | Target |
+|---|---|---|
+| formula / theorem sections | yes | ≥ 6 formula blocks per chapter, split into 2–4 sections |
+| `Statements to judge` | yes | exactly one per chapter, 5–7 one-line claims |
+| worked example | yes | 1–2 per chapter, `20xx Qn — title (N marks)`, steps as bullets, numbers substituted |
+| header facts (`> **Meta:**`) | yes | one line |
+
+**Only a chapter may use `#`.** `# Appendix`, `# Quiz corner`, `# Extra practice`, `# Summary` all
+render as chapter bars, so the sheet grows a second half that looks like filler — and it is filler.
+If a topic does not fit, it belongs in a chapter; if it does not belong to a chapter, drop it.
+`lint.js` fails the build on a top-level heading that is not `# N ·`.
+
+### Work in rounds, never in one pass
+
+The first draft is never the sheet. Four rounds, each with a different question:
+
+1. **Coverage.** List the examinable topics from the syllabus and the past papers. Write the formula
+   sections for *all* of them — one `$$` block per formula, no prose, no examples yet. Do not think
+   about page count; a thin first draft is a planning error, a long one is fine.
+2. **Per chapter: statements + example.** Add the 5–7 statements and one worked example to every
+   chapter. The example must carry the numbers of a real question and show each substitution, not
+   just the answer.
+3. **Measure, then deepen.** Render with `--no-print` or run `--audit` and read the coverage table
+   (`sections formulas stmt example chars`). The row that is below target is the one to expand —
+   inside that chapter: more theorems, a second example, the derivation line the proof needs.
+   **Never** append new top-level content to fill the page.
+4. **Trim to the page budget.** Only now cut: prose that restates a formula, then ☆/★ blocks, never
+   a `★★★` formula and never the step an exam answer needs.
+
+The rule of thumb: **if a page is short, the fix is inside a chapter; if it overflows, the fix is
+also inside a chapter.** A chapter that ends up thin is a chapter that will be thin on the exam
+paper too.
+
 ### Choosing what goes in
 
 1. **Rate by evidence, not intuition.** Count how often a topic appears across the past papers and
@@ -176,7 +223,7 @@ Pipeline flags:
 
 | Flag | Meaning |
 |---|---|
-| `--lint` | the static checks only (markup leaks, glyphs, numbering); no PDF |
+| `--lint` | the static checks only (lint + shape advice); no PDF, no browser |
 | `--audit` | print the chapter/section/past-paper structure, then exit |
 | `--strict-style` | make the shape advice fatal (team/classroom mode) |
 | `--no-style` | skip the shape report entirely |
@@ -218,6 +265,10 @@ offending content: `--base=auto` is a *consequence* of too much content, not a c
 **First run on a new machine:** `node skills/cheatsheet-pdf/scripts/doctor.js --smoke` checks node,
 Chrome and the temp dir, then renders the regression example end to end.
 
+**Changing the conventions?** Run `npm run test:guards` first (about a second): it asserts that the
+top-level-heading rule, the markup rules and the per-chapter skeleton still fire on the fixtures in
+`examples/fixtures/`. `npm test` is the slow layer that renders four sheets and runs every gate.
+
 **Do not search the dials blindly.** Start with the defaults (landscape A4, 5 columns, 2 pages, 5 mm
 margins), add `--base=auto` when the page count must be hit exactly, run once, and act on the
 `ADVICE:` lines that `measure` prints:
@@ -244,10 +295,12 @@ Two passes converge. Sweeping twenty combinations means the advice was ignored.
 1. `--lint` reports **0 errors** (a literal `**`, a glyph the font lacks, a numbering gap, a
    duplicated past-paper question) and **`STYLE` 0 errors** (chapters, section order, blocks instead
    of paragraphs).
-2. `--audit` shows chapters 1..N in order, sections numbering without gaps, and each past-paper
-   question once (a question split across two chapters must say so in its titles, e.g.
-   `2023 Q2 (a)(b) — source part` / `2023 Q2 (c)(d) — extraction`).
-3. Every past-paper topic appears somewhere on the page.
+2. `--audit` shows chapters 1..N in order, sections numbering without gaps, each past-paper question
+   once (a question split across two chapters must say so in its titles, e.g. `2023 Q2 (a)(b) —
+   source part` / `2023 Q2 (c)(d) — extraction`), and no top-level heading that is not a chapter.
+3. Every past-paper topic appears somewhere on the page, and **every chapter has its own
+   statements section and at least one worked example** — `--audit` prints one row per chapter with
+   `sections formulas stmt example chars`, so a thin chapter is visible before the PDF exists.
 4. The three tiers are visibly used — a reader can tell in five seconds what must be memorised.
 5. Every `★★★` formula has a derivation line or a `*Meaning:*`.
 6. `verify.js` reports 12/12 PASS (the theme gate needs `--theme=any` when you changed the palette on purpose). On a multi-page sheet the relevant capacity gate is *"no page over

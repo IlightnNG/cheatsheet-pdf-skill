@@ -46,6 +46,7 @@ lines.forEach((l, i) => {
       stars: m[1], chap: Number(m[2]), idx: Number(m[3]), title: m[4].trim(), line: i + 1,
       formulas: 0, bullets: 0, tables: 0, chars: 0,
       exam: /20\d\d\s*Q\d/.test(m[4]), marks: /\d+\s*marks?/i.test(m[4]),
+      example: /20\d\d\s*Q\d|work(ed)?\s+example|\bexample\b/i.test(m[4]),
       statements: /statements to judge/i.test(m[4]),
     };
     return;
@@ -99,6 +100,14 @@ for (const c of chapters) {
   const stmt = c.sections.filter((s) => s.statements);
   const exams = c.sections.filter((s) => s.exam);
   if (stmt.length > 1) add('shape', 'chapter ' + c.n + ' has ' + stmt.length + ' statements sections (reference: one)', false);
+  if (!stmt.length) {
+    add('skeleton', 'chapter ' + c.n + ' has no "Statements to judge" section - each chapter carries its own, ' +
+      'they do not belong in one block after the last chapter', true);
+  }
+  if (!c.sections.some((s) => s.example)) {
+    add('skeleton', 'chapter ' + c.n + ' has no worked example - add "## ★★★ N.x 2024 Q2 — title (12 marks)" ' +
+      'and walk the numbers through', true);
+  }
   if (exams.length > 3) add('shape', 'chapter ' + c.n + ' has ' + exams.length + ' past-paper sections (reference: 1-2)', false);
   for (const e of exams) {
     if (!e.marks) add('exam', 'past-paper section "' + e.title + '" does not say "(N marks)"', false);
@@ -131,8 +140,22 @@ const stats = {
   chars: secs.reduce((a, s) => a + s.chars, 0),
   strict,
 };
-if (asJson) { console.log(JSON.stringify({ stats, problems }, null, 2)); process.exit(errors.length ? 1 : 0); }
+const perChapter = chapters.map((c) => ({
+  n: c.n, title: c.title, sections: c.sections.length,
+  formulas: c.sections.reduce((a, s) => a + s.formulas, 0),
+  statements: c.sections.filter((s) => s.statements).length,
+  examples: c.sections.filter((s) => s.example).length,
+  chars: c.sections.reduce((a, s) => a + s.chars, 0),
+}));
+if (asJson) { console.log(JSON.stringify({ stats: Object.assign({ perChapter }, stats), problems }, null, 2)); process.exit(errors.length ? 1 : 0); }
 
+// Coverage table: one line per chapter, so a thin chapter is visible before the PDF exists.
+console.log('chapter'.padEnd(34) + 'sections formulas stmt example chars');
+for (const c of perChapter) {
+  console.log(((c.n + ' · ' + c.title).slice(0, 33)).padEnd(34) +
+    String(c.sections).padStart(8) + String(c.formulas).padStart(9) +
+    String(c.statements).padStart(5) + String(c.examples).padStart(8) + String(c.chars).padStart(7));
+}
 for (const p of errors) console.log('STYLE ERROR ' + p.kind.padEnd(8) + ' ' + p.msg);
 for (const p of warns) console.log('STYLE WARN  ' + p.kind.padEnd(8) + ' ' + p.msg);
 console.log('STYLE ' + errors.length + ' error(s), ' + warns.length + ' warning(s)   ' +

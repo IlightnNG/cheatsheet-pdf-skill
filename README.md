@@ -112,18 +112,21 @@ into errors for a team that must match exactly.
 
 | Rule (advice) | Reference value |
 |---|---|
-| Chapters | `# N · Title`, N = 1..K, no gaps |
+| Chapters | `# N · Title`, N = 1..K, no gaps — **the only place `#` is allowed** |
 | Sections | `## ★★★ N.M Title`, M sequential inside the chapter |
 | Section content | ≥ 1 block (`$$`, table, bullets) rather than paragraphs |
-| Order inside a chapter | formulas → statements → past papers |
+| Order inside a chapter | formulas → statements → worked example |
 | ★★★ share | 76 % of sections |
-| Formula blocks per section | average 3.6 (3–9) |
-| Statements section | one per chapter, 5–7 bullets with `==keywords==` |
-| Past-paper section | 1–2 per chapter, title says `(N marks)`, steps as bullets |
+| Formula blocks | ≥ 6 per chapter (average 3.6 per section) |
+| Statements to judge | exactly one per chapter, 5–7 bullets with `==keywords==` |
+| Worked example | 1–2 per chapter, title says `(N marks)`, steps as bullets, numbers substituted |
 
 The reference specimen is
 [`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,
-2 pages); copying its rhythm is faster than inventing one. In short:
+2 pages); copying its rhythm is faster than inventing one. A chapter is always the same stack:
+formula sections, then its own `Statements to judge`, then a worked example — and the sheet never
+grows a block after the last chapter: `# Appendix`, `# Quiz corner` and `# Extra practice` all render
+as chapter bars and read as filler, so the lint rejects them. In short:
 
 | Write | Renders as |
 |---|---|
@@ -161,7 +164,7 @@ holds:
 | `--no-print` | measure only, no PDF | off |
 | `--split` | experimental formula line breaking | off |
 | `--thin` | printed hairline thickness in pt; `0` disables | 0.25 |
-| `--lint` | static checks only (markup leaks, missing glyphs, numbering), no PDF | off |
+| `--lint` | static checks only (markup, glyphs, numbering, shape advice), no PDF | off |
 | `--strict-style` | turn the shape advice into hard errors | off |
 | `--theme=any` | declare a custom palette (skip the reference theme check) | off |
 | `--no-style` | skip the shape report entirely | off |
@@ -198,6 +201,20 @@ instead of a parameter sweep:
 [measure] COL=2 FILL=40 ... ADVICE: content fills only 1.40 of 5 columns - sparse.
           Enlarge the type with --base.  Safe start: --base=10.1; a formula-heavy sheet may need more.
 ```
+
+## Testing
+
+Two layers, both runnable without a browser or a network:
+
+```bash
+npm run test:guards   # ~1 s: lint/style guards against examples/fixtures/*
+npm test              # ~4 min: renders the four bundled sheets and runs all twelve gates
+```
+
+`test:guards` is the fast loop for changing a convention: `examples/fixtures/` holds one good sheet
+and three deliberately broken ones (a trailing `# Appendix`, statements gathered after the last
+chapter, unsupported markup), and each case asserts the exact guard output. `npm test` is the slow
+loop for changing the renderer.
 
 ## Bundled examples
 
@@ -236,7 +253,7 @@ from the reference.
 | Core-formula colour | `.fxc { background / border-left }` | **theme token**. `.fxd` is the standard formula box, `.fxs` the supporting one. |
 | Section priority colours | `h2.p3`, `h2.p2`, `h2.p1`, `h2.p0` | **theme tokens**: ★★★, ★★, ★, ☆. The priority scale is **colour-only** — it does not change the font size. |
 | Title, right-hand note, footer | the `> **Meta:**` / `**Footer:**` lines in the Markdown (a `> **Header:**` line adds a short subtitle after the title — keep it brief: a long one wraps the note and costs column height) | Or override with `SHEET_TITLE` / `SHEET_SUBTITLE` / `SHEET_META` / `SHEET_FOOTER`. |
-| Chinese or Japanese text | wrap it in `<span class="zh">…</span>` | A CJK class is already defined (`.zh`); for another script add its family there. Chinese renders without it too — the class just pins the typeface. |
+| Chinese or Japanese text | wrap it in a span with class `zh` | A CJK class is already defined (`.zh`); for another script add its family there. Chinese renders without it too — the class just pins the typeface, and the render embeds a subset of the fallback font, so the PDF stays readable elsewhere (`npm run demo:cjk` renders a sample). |
 
 **`--css` appends, so an overlay only states what it changes.** The bundled portrait example is six
 lines:

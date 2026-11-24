@@ -101,9 +101,20 @@ lines.forEach((l, i) => {
 const chapters = [];
 const sections = [];
 const examHeads = [];
+let titleSeen = false;
 lines.forEach((l, i) => {
   let m = /^#\s+(\d+)\s*·\s*(.+)$/.exec(l);
   if (m) { chapters.push({ n: Number(m[1]), title: m[2].trim(), line: i + 1 }); return; }
+  // Every "# ..." becomes a chapter bar in the render, so a top-level heading that is not a chapter
+  // prints as a second half of the sheet (the "filler after the last chapter" failure). The one
+  // allowed exception is the very first title line.
+  if (/^#\s+/.test(l)) {
+    if (!titleSeen && !chapters.length) { titleSeen = true; return; }
+    add('error', 'top-level',
+      'top-level heading at line ' + (i + 1) + ' is not a chapter: "' + l.replace(/^#\s+/, '').slice(0, 48) +
+      '" - only "# N · Chapter" may use one #; move the content inside a chapter');
+    return;
+  }
   m = /^##\s+(★+|☆+)\s*(\d+)\.(\d+)\s+(.+)$/.exec(l);
   if (m) {
     sections.push({ chap: Number(m[2]), idx: Number(m[3]), title: m[4].trim(), line: i + 1, stars: m[1] });

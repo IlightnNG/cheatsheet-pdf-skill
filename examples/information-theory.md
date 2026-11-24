@@ -138,6 +138,17 @@ $$?T^n_\delta\subseteq A^{(n)}_\mu\ \text{for small }\delta$$
 - <mark>DPI</mark>: $X-Y-Z\Rightarrow I(X:Z)\le I(X:Y)$.
 - Conditioning can create information: with $X,Y$ i.i.d. fair and $Z=X\oplus Y$, $I(X:Z)=0$ but $I(X:Z\vert Y)=1$. So $I(X:Y\vert Z)>I(X:Y)$ is possible.
 
+## ★★★ 1.8 2022 Q4 — a joint table by hand (8 marks)
+
+*Q.* $P_{XY}$: $(0,0)=\tfrac12$, $(0,1)=\tfrac14$, $(1,0)=\tfrac14$, $(1,1)=0$.
+
+- (a) Marginals. $P_X=P_Y=(\tfrac34,\tfrac14)$, so $H(X)=H(Y)=h_2(\tfrac14)=0.811$.
+- (b) Joint. $H(XY)=\tfrac12\cdot1+2\cdot\tfrac14\cdot2=1.5$.
+- (c) Information. $I(X:Y)=0.811+0.811-1.5=0.123$ bit.
+- (d) Distance. $D(P_{XY}\Vert P_XP_Y)=I(X:Y)=0.123$ (the product distribution is the reference).
+- (e) Guess. $P(X\vert Y{=}0)=(\tfrac23,\tfrac13)$, $P(X\vert Y{=}1)=(1,0)$ ⇒ $p_{\rm guess}=\tfrac34\cdot\tfrac23+\tfrac14\cdot1=0.75$, so $H_{\min}=\log_2\tfrac43=0.415$ — far below $H(X\vert Y)=0.689$.
+
+
 # 2 · Source coding (Ch.2)
 
 ## ★★★ 2.1 Codes and Kraft
@@ -329,6 +340,16 @@ $$!\varepsilon_{\rm sym}\ge\tfrac12\big(1-\sqrt{\tfrac12D}\big)$$
 - Stein: at fixed $\alpha$, $-\tfrac1n\log\beta^*\to D(P_0\Vert P_1)$. Chernoff: for $\alpha=\beta$ the exponent is $\min_s\log\sum P_0^{1-s}P_1^{s}$.
 - Pinsker: $\delta_{\rm tvd}\le\sqrt{\tfrac12D}$ — total variation is controlled by relative entropy, not <mark>converse</mark>ly.
 - The complement matters: $\tfrac12\min_{\mathcal A}[2-P_0(\mathcal A)-P_1(\mathcal A)]\equiv1$ is not an error probability.
+
+## ★★★ 3.6 2024 Q1 — one test, every number (6 marks)
+
+*Q.* $H_0:\ X\sim\operatorname{Bern}(\tfrac14)$ vs $H_1:\ X\sim\operatorname{Bern}(\tfrac34)$; decide "accept $H_1$" iff $X=1$.
+
+- (a) Errors. $\alpha=\Pr_0[\text{accept }H_1]=\tfrac14$, $\beta=\Pr_1[\text{accept }H_0]=\tfrac14$.
+- (b) Balanced error. $P_e=\tfrac12(\alpha+\beta)=\tfrac14$.
+- (c) Distance. $\delta_{\rm tvd}=\tfrac12(|\tfrac34-\tfrac14|+|\tfrac14-\tfrac34|)=\tfrac12$, and the bound is exact here: $P_e=\tfrac{1-\delta}{2}=\tfrac14$.
+- (d) Exponent. $D(\tfrac14\Vert\tfrac34)=-\tfrac14\log3=0.396$ nats, so $n$ samples shrink $\beta$ like $e^{-nD}$ at fixed $\alpha$.
+
 
 # 4 · Randomness extraction (Ch.4)
 
@@ -873,3 +894,19 @@ $$!p(\mathcal A)+q(\mathcal A^c)\ge\tfrac12e^{-D(p\Vert q)}\quad\text{(Bretagnol
 $$?D(\mathbb P\Vert\mathbb P')=\sum_i\mathbb E[T_n(i)]\,D(P_i\Vert P_i')\quad\text{(divergence decomposition)}$$
 
 $$?H(X\vert Y)\le h_2(\eta)+\eta\log\vert\mathcal X\vert\ \text{(Fano)}\qquad D\le\chi^2=\frac{(\mu-\mu')^2}{\mu'(1-\mu')}$$
+
+## ★★ 8.4 Statements to judge (one line each)
+
+- <mark>Sample complexity</mark> is $\Theta(d/\epsilon^2)$ — twice the accuracy costs four times the samples.
+- The upper bound comes from $\mathbb E\,\delta_{\rm tvd}\le\tfrac12\sqrt{d/n}$; the matching lower bound is a two-point construction, not a different argument.
+- <mark>Bandit</mark> regret is $\Omega(\sqrt{kn})$, not $\Omega(n)$: exploration is what removes the linear term.
+- The <mark>Bretagnolle–Huber</mark> inequality is the one that converts a divergence into a test error.
+
+## ★★ 8.5 2024 Q1 — put numbers in the bound (4 marks)
+
+*Q.* A distribution on $d=100$ symbols, target $\epsilon=0.1$; how many samples does the upper bound need?
+
+- (a) Formula. $n\ge\dfrac{d}{4\epsilon^2}$.
+- (b) Substitute. $n=\dfrac{100}{4\cdot0.01}=2500$.
+- (c) Read it. Doubling accuracy ($\epsilon=0.05$) needs $n=10\,000$ — the $\epsilon^{-2}$ law in one line.
+
