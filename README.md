@@ -123,6 +123,7 @@ into errors for a team that must match exactly.
 | Worked example | 1–2 per chapter, steps as bullets, numbers substituted |
 | Formula drill | 1–3 per chapter: **one dataset, several related formulas**, each as a plain chained equality (`formula = substitution = value`) — no tables, 3–6 lines |
 | Highlighted names | `==name==` on every important formula/theorem, inside the knowledge section, not only in the statements |
+| No repetition | a drill must not recompute a formula the same chapter's past paper already used |
 
 The reference specimen is
 [`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,

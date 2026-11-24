@@ -170,6 +170,12 @@ Rules that make a drill worth the space:
 - prose is capped at the `*Data.*` line and one trailing check ("at ε = 1/2 the capacity is 0").
 - a drill **must contain data**: `style.js` reports one that carries almost no numbers, and one built
   on a table.
+- **a drill must not re-derive the formula the chapter's past paper already computed.** The paper
+  does the exam version; the drill covers a *different* formula or a different scenario of the same
+  topic. `style.js` compares the two sections' formulas (numbers stripped) and reports the overlap:
+  > `drill "Worked example — …" repeats formula(s) the past paper in this chapter already computed: C = 1-h_2(0.1)`
+  If the only important formula is the one the paper uses, skip the drill for that chapter and let the
+  paper carry it.
 
 ### Highlight the names
 

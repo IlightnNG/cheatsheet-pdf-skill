@@ -92,6 +92,13 @@ const cases = [
     expect: /no formula drill/,
   },
   {
+    name: 'a drill that repeats the exam formula is reported',
+    file: 'drill-duplicate.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /repeats formula\(s\) the past paper/,
+  },
+  {
     name: 'a drill built on a table is reported',
     file: 'drill-table.md',
     run: 'style',

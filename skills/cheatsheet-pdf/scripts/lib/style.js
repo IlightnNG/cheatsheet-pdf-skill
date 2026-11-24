@@ -13,6 +13,22 @@
 'use strict';
 const fs = require('fs');
 
+// The symbolic part of a math run: "C = 1 - h_2(\epsilon) = 0.531" -> "c=-h_(epsilon)".
+// Digits go first (0.1 and 0.25 are the same formula), then TeX decoration and spacing.
+function skeleton(run) {
+  let s = run.replace(/^\$\$[!?]?/, '').replace(/\$\$/, '').replace(/\$/g, '').trim();
+  const parts = s.split('=');
+  s = parts.length >= 2 ? parts[0] + '=' + parts[1] : parts[0];
+  s = s.replace(/\\text\{[^{}]*\}/g, '')
+       .replace(/\\left|\\right/g, '')
+       .replace(/[0-9]+(\.[0-9]+)?/g, '')
+       .replace(/[\\{}\s,;:]/g, '')
+       .toLowerCase();
+  return s;
+}
+// A bare parameter assignment (epsilon=) is not a formula: require an operator in the statement.
+function isFormula(s) { return s.length >= 5 && /[a-z]/.test(s) && /[+\-*\/^(]/.test(s); }
+
 const argv = process.argv.slice(2);
 const mdPath = argv.find((a) => !a.startsWith('--'));
 const asJson = argv.includes('--json');
@@ -58,6 +74,7 @@ lines.forEach((l, i) => {
   if (commentDepth > 0) { if (/-->/.test(l)) commentDepth -= 1; return; }
   const t = l.trim();
   sec.chars += l.length;
+  sec.math = (sec.math || []).concat([...l.matchAll(/\$\$[!?]?[\s\S]*?\$\$|\$[^$\n]*?\$/g)].map((m) => m[0]));
   sec.digits = (sec.digits || 0) + (t.match(/\d/g) || []).length;
   sec.marks = (sec.marks || 0) + (t.match(/==[^=\n]+==/g) || []).length + (t.match(/<mark>/g) || []).length;
   if (sec.drill && /^\|/.test(t)) sec.drillTables = (sec.drillTables || 0) + 1;
@@ -134,6 +151,32 @@ for (const c of chapters) {
   for (const e of exams) {
     if (!e.marks) add('exam', 'past-paper section "' + e.title + '" does not say "(N marks)"', false);
     if (e.formulas > 3) add('exam', 'past-paper section "' + e.title + '" carries ' + e.formulas + ' formula blocks - the reference keeps the steps as bullets', false);
+  }
+}
+
+// A drill that re-derives the past paper's formula doubles the space and teaches nothing.
+for (const c of chapters) {
+  const exams = c.sections.filter((s) => s.exam);
+  const drills = c.sections.filter((s) => s.drill);
+  if (!exams.length || !drills.length) continue;
+  const inExams = new Set();
+  for (const e of exams) for (const r of (e.math || [])) { const k = skeleton(r); if (isFormula(k)) inExams.add(k); }
+  for (const d of drills) {
+    const hits = [];
+    for (const r of (d.math || [])) {
+      const k = skeleton(r);
+      if (isFormula(k) && inExams.has(k)) {
+        // Report the drill's own line, digits and all: it is what the author will edit.
+        const label = r.replace(/^\$\$[!?]?/, '').replace(/\$\$$/, '').replace(/\$/g, '')
+          .split('=').slice(0, 2).join(' = ').replace(/\s+/g, ' ').trim().slice(0, 44);
+        hits.push(label);
+      }
+    }
+    if (hits.length) {
+      add('duplicate', 'drill "' + d.title + '" repeats formula(s) the past paper in this chapter already ' +
+        'computed: ' + [...new Set(hits)].slice(0, 3).join('; ') + ' - drill a formula the exam does not cover, ' +
+        'or drop the repeated line', false);
+    }
   }
 }
 
