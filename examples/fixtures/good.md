@@ -47,3 +47,11 @@ $$?I(X:Y)=H(Y)-H(Y\vert X)$$
 - (b) At $R=0.1$ reliable transmission is possible.
 
 > **Key** — capacity is the supremum of reliable rates.
+
+## ★★★ 2.4 Worked example — the BSC capacity with numbers
+
+*Scenario.* A BSC flips each bit with $\epsilon=0.1$; what rate can be trusted?
+
+- (a) $h_2(0.1)=0.469$.
+- (b) $C=1-0.469=0.531$ bits per channel use.
+- (c) Check: at $\epsilon=\tfrac12$, $h_2=1$ and $C=0$ — the worst channel, as expected.

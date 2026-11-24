@@ -133,13 +133,51 @@ live inside the chapter they belong to** — never in one block after the last c
 |---|---|---|
 | formula / theorem sections | yes | ≥ 6 formula blocks per chapter, split into 2–4 sections |
 | `Statements to judge` | yes | exactly one per chapter, 5–7 one-line claims |
-| worked example | yes | 1–2 per chapter, `20xx Qn — title (N marks)`, steps as bullets, numbers substituted |
+| worked example | yes | 1–2 per chapter: a past paper (`20xx Qn — title (N marks)`) and/or a **formula drill** (`Worked example — <formula> with numbers`), steps as bullets, numbers substituted |
 | header facts (`> **Meta:**`) | yes | one line |
 
 **Only a chapter may use `#`.** `# Appendix`, `# Quiz corner`, `# Extra practice`, `# Summary` all
 render as chapter bars, so the sheet grows a second half that looks like filler — and it is filler.
 If a topic does not fit, it belongs in a chapter; if it does not belong to a chapter, drop it.
 `lint.js` fails the build on a top-level heading that is not `# N ·`.
+
+### Two kinds of example (both belong in a chapter)
+
+A past-paper question proves the topic was examined; a **formula drill** teaches the arithmetic. The
+sheet wants one of each where the chapter allows it:
+
+```markdown
+## ★★★ 5.10 2023 Q3 — a code over F4 (10 marks)          <- past paper: the whole question
+
+## ★★★ 5.11 Worked example — the Hamming bound with numbers   <- drill: one formula, all the steps
+*Scenario.* A binary code, n = 7, d = 3, |C| = 16.
+1. t = floor((d-1)/2) = 1.
+2. V_2(1) = 1 + 7 = 8.
+3. Hamming: |C| <= 2^7 / 8 = 16 — the code is at the bound, so it is perfect.
+```
+
+| Kind | Title | Contents |
+|---|---|---|
+| past paper | `20xx Qn — <topic> (N marks)` | the original numbers, the parts, one `> **Key**` |
+| formula drill | `Worked example — <formula> with numbers` | a one-line *Scenario*, then numbered substitutions, then a one-line sanity check |
+
+A drill is small (3–6 lines) and its value is the **substitution**, not the theory: pick the numbers
+so they divide cleanly, write every intermediate value, and end with a check ("the bound is met, so
+the code is perfect"). Aim for one drill in every chapter that has a computable formula, even when a
+past paper already covers it — this is the part a reader reproduces under exam pressure.
+
+### Priority when the page is full
+
+The three block types have a fixed priority; when the sheet overflows, cut from the bottom:
+
+| Rank | Block | When cutting |
+|---|---|---|
+| 1 | formulas and theorems (`$$`, tables of cases) | never cut; shorten prose around them |
+| 2 | worked examples (past paper and drill) | keep the substitution steps; cut the framing sentence |
+| 3 | `Statements to judge` | **cut first**: drop the least examinable lines, or shorten each to one clause |
+
+`paginate-pages.js` prints the same order in its `ADVICE:` line, and the section-level candidates it
+lists are ranked by star, so a `★` statements section is the first thing it suggests.
 
 ### Work in rounds, never in one pass
 
@@ -181,14 +219,17 @@ paper too.
 
 ### Compression order
 
-When it does not fit — stop as soon as it fits:
+When it does not fit — stop as soon as it fits, and cut in this order:
 
-1. prose that restates the formula,
-2. sentences about why a result matters (keep `*Meaning:*`),
-3. second sentences inside proof sketches (keep the step the examiner asks for),
-4. off-syllabus enrichment.
+1. **statement lines** — the lowest priority block: drop the least examinable claims, or shorten each
+   to one clause (a judgement line is worth less than the formula or example it refers to),
+2. prose that restates the formula,
+3. sentences about why a result matters (keep `*Meaning:*`),
+4. second sentences inside proof sketches (keep the step the examiner asks for),
+5. off-syllabus enrichment.
 
-**Never** delete a formula block, and never the proof step the examiner asks for.
+**Never** delete a formula block, and never the substitution step of a worked example. A drill may
+lose its *Scenario* sentence, not its arithmetic.
 
 ### Two Markdown hazards
 

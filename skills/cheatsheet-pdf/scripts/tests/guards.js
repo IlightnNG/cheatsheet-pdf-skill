@@ -85,6 +85,20 @@ const cases = [
     expect: /no worked example/,
   },
   {
+    name: 'a past paper without a formula drill is reported',
+    file: 'exams-only.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /no formula drill/,
+  },
+  {
+    name: 'a drill counts as the worked example',
+    file: 'good.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /STYLE 0 error/,
+  },
+  {
     name: '--strict-style makes the skeleton fatal',
     file: 'skewed.md',
     run: 'style',

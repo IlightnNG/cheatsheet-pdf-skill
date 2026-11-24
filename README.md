@@ -115,11 +115,13 @@ into errors for a team that must match exactly.
 | Chapters | `# N · Title`, N = 1..K, no gaps — **the only place `#` is allowed** |
 | Sections | `## ★★★ N.M Title`, M sequential inside the chapter |
 | Section content | ≥ 1 block (`$$`, table, bullets) rather than paragraphs |
-| Order inside a chapter | formulas → statements → worked example |
+| Order inside a chapter | formulas → statements → worked examples |
+| Priority when full | formulas > worked examples > statements (cut statements first) |
 | ★★★ share | 76 % of sections |
 | Formula blocks | ≥ 6 per chapter (average 3.6 per section) |
 | Statements to judge | exactly one per chapter, 5–7 bullets with `==keywords==` |
-| Worked example | 1–2 per chapter, title says `(N marks)`, steps as bullets, numbers substituted |
+| Worked example | 1–2 per chapter, steps as bullets, numbers substituted |
+| Formula drill | one per chapter with a computable formula — a scenario, the substitution, a sanity check |
 
 The reference specimen is
 [`examples/information-theory.md`](examples/information-theory.md) (8 chapters, 59 sections,

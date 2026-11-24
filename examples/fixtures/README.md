@@ -9,6 +9,7 @@ wrong on purpose, and the point of the test is that the guard still catches it.
 | `appendix.md` | ends with a top-level `# Appendix` | `LINT ERROR top-level` |
 | `skewed.md` | all statements in one block after the last chapter | `STYLE WARN skeleton` (advice), `STYLE ERROR` with `--strict-style` |
 | `markup.md` | `__bold__`, `~~strike~~`, a box-drawing stroke, an escaped table pipe | four `LINT ERROR`s |
+| `exams-only.md` | a past paper but no formula drill | `STYLE WARN skeleton ... no formula drill` |
 
 Run them with `npm run test:guards` (about a second, no browser).
 

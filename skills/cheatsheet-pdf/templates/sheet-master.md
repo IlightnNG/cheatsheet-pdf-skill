@@ -50,6 +50,14 @@ $$STANDARD FORMULA$$
 
 > **Key** — <the one sentence that earns the marks>.
 
+## ★★★ 1.5 Worked example — <formula> with numbers
+
+*Scenario.* <one line: the object, the numbers>.
+
+- (a) <the formula, then the numbers substituted>.
+- (b) <the intermediate value>.
+- (c) Check: <a sanity check against a known case>.
+
 # 2 · TOPIC
 
 ## ★★★ 2.1 FORMULAS AND THEOREMS
@@ -83,12 +91,23 @@ $$!RESULT$$
 
 > **Key** — <the sentence>.
 
+## ★★★ 2.5 Worked example — <formula> with numbers
+
+*Scenario.* <one line: the object, the numbers>.
+
+- (a) <the formula, then the numbers substituted>.
+- (b) <the intermediate value>.
+- (c) Check: <a sanity check against a known case>.
+
 <!--
 Self-check before rendering - every box must be ticked:
   [ ] ONLY chapters use "#" (plus the title): no "# Appendix", "# Quiz", "# Extra" after the last
       chapter - they render as chapter bars and read as filler
   [ ] every chapter carries: formula sections (>= 6 blocks), its own STATEMENTS section (5-7 lines,
       ==keywords==), and 1-2 WORKED EXAMPLES with the numbers substituted
+  [ ] at least one of them is a FORMULA DRILL ("Worked example — <formula> with numbers"): a
+      scenario, the substitution, the arithmetic, a sanity check - not only past-paper questions
+  [ ] when the page overflows, cut STATEMENTS first, then prose; never a formula or a drill step
   [ ] every section heading carries a star run, numbering N.M with N = its chapter, M sequential
   [ ] chapter order follows the syllabus; INSIDE a chapter it is formulas -> statements -> example
   [ ] every section is made of blocks ($$ formulas, tables, bullets) - no section is a paragraph

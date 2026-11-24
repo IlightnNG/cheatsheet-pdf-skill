@@ -46,7 +46,8 @@ lines.forEach((l, i) => {
       stars: m[1], chap: Number(m[2]), idx: Number(m[3]), title: m[4].trim(), line: i + 1,
       formulas: 0, bullets: 0, tables: 0, chars: 0,
       exam: /20\d\d\s*Q\d/.test(m[4]), marks: /\d+\s*marks?/i.test(m[4]),
-      example: /20\d\d\s*Q\d|work(ed)?\s+example|\bexample\b/i.test(m[4]),
+      example: /20\d\d\s*Q\d|work(ed)?\s+example|formula\s+drill|\bexample\b/i.test(m[4]),
+      drill: /work(ed)?\s+example|formula\s+drill|scenario|\bexample\b/i.test(m[4]) && !/20\d\d\s*Q\d/.test(m[4]),
       statements: /statements to judge/i.test(m[4]),
     };
     return;
@@ -87,8 +88,9 @@ for (const s of secs) {
 
 // ---- order inside a chapter: formulas -> statements -> past papers
 for (const c of chapters) {
-  const kinds = c.sections.map((s) => (s.exam ? 'exam' : (s.statements ? 'stmt' : 'formula')));
-  const firstExam = kinds.indexOf('exam');
+  // A drill is an example, not a formula block: it may sit after the statements section.
+  const kinds = c.sections.map((s) => (s.exam || s.drill ? 'example' : (s.statements ? 'stmt' : 'formula')));
+  const firstExam = kinds.indexOf('example');
   const stmtIdx = kinds.indexOf('stmt');
   if (firstExam >= 0 && kinds.slice(firstExam).some((k) => k === 'formula')) {
     add('order', 'chapter ' + c.n + ': a formula section comes after a past-paper section - the reference order ' +
@@ -103,6 +105,11 @@ for (const c of chapters) {
   if (!stmt.length) {
     add('skeleton', 'chapter ' + c.n + ' has no "Statements to judge" section - each chapter carries its own, ' +
       'they do not belong in one block after the last chapter', true);
+  }
+  const drills = c.sections.filter((s) => s.drill);
+  if (!drills.length && c.sections.some((s) => s.exam)) {
+    add('skeleton', 'chapter ' + c.n + ' has past-paper questions but no formula drill - add ' +
+      '"## ★★★ N.x Worked example — <formula> with numbers" showing the arithmetic step by step', false);
   }
   if (!c.sections.some((s) => s.example)) {
     add('skeleton', 'chapter ' + c.n + ' has no worked example - add "## ★★★ N.x 2024 Q2 — title (12 marks)" ' +
@@ -145,16 +152,18 @@ const perChapter = chapters.map((c) => ({
   formulas: c.sections.reduce((a, s) => a + s.formulas, 0),
   statements: c.sections.filter((s) => s.statements).length,
   examples: c.sections.filter((s) => s.example).length,
+  drills: c.sections.filter((s) => s.drill).length,
   chars: c.sections.reduce((a, s) => a + s.chars, 0),
 }));
 if (asJson) { console.log(JSON.stringify({ stats: Object.assign({ perChapter }, stats), problems }, null, 2)); process.exit(errors.length ? 1 : 0); }
 
 // Coverage table: one line per chapter, so a thin chapter is visible before the PDF exists.
-console.log('chapter'.padEnd(34) + 'sections formulas stmt example chars');
+console.log('chapter'.padEnd(34) + 'sections formulas stmt exam drill chars');
 for (const c of perChapter) {
   console.log(((c.n + ' · ' + c.title).slice(0, 33)).padEnd(34) +
     String(c.sections).padStart(8) + String(c.formulas).padStart(9) +
-    String(c.statements).padStart(5) + String(c.examples).padStart(8) + String(c.chars).padStart(7));
+    String(c.statements).padStart(5) + String(c.examples - c.drills).padStart(5) +
+    String(c.drills).padStart(6) + String(c.chars).padStart(7));
 }
 for (const p of errors) console.log('STYLE ERROR ' + p.kind.padEnd(8) + ' ' + p.msg);
 for (const p of warns) console.log('STYLE WARN  ' + p.kind.padEnd(8) + ' ' + p.msg);

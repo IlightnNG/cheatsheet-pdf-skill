@@ -242,9 +242,13 @@ fs.writeFileSync(SHEET, head + '\n' + pages.join('\n') + '\n</body></html>\n', '
 // "4.31 columns". Lowest priority first, then the tallest - see the compression order in
 // SKILL.md. Heights are measured content height in that section's column.
 const rank = (p) => ({ p0: 0, p1: 1, p2: 2, p3: 3 }[p] === undefined ? 9 : { p0: 0, p1: 1, p2: 2, p3: 3 }[p]);
+// A "Statements to judge" section outranks nothing: it is the first thing to cut, so it is listed
+// before even the ☆ sections. A judgement line is worth less than the formula or the example it
+// refers to; the same order is documented in SKILL.md.
+const isStmt = (k) => /statements to judge/i.test(k) ? 1 : 0;
 const trim = [...sections.entries()]
   .map(([k, h]) => ({ key: k, prio: k.slice(0, 2), mm: h / 96 * 25.4 }))
-  .sort((a, b) => (rank(a.prio) - rank(b.prio)) || (b.mm - a.mm));
+  .sort((a, b) => (isStmt(b.key) - isStmt(a.key)) || (rank(a.prio) - rank(b.prio)) || (b.mm - a.mm));
 fs.writeFileSync(path.join(dir, 'pages.json'), JSON.stringify({
   pages: pages.length, asked: PAGES, filled: cuts.length, cols: NCOL, cuts: cuts, overflow: overflow,
   sections: trim.slice(0, 20)
@@ -269,13 +273,14 @@ if (overflow) {
   console.log('ADVICE: content does not fit ' + PAGES + ' page(s) - page ' + overflow.page +
               ' needs ' + overflow.needed.toFixed(2) + ' of ' + overflow.have + ' columns.');
   console.log('ADVICE: free about ' + needMm + 'mm of column height, lowest priority first:' +
-              ' cut ☆ and ★ sections before ★★, and never a ★★★ formula.');
+              ' cut the Statements section first, then ☆ and ★ sections before ★★, and never a ★★★ formula or a drill step.');
   for (const t of trim.slice(0, 5)) {
     if (rank(t.prio) === 3) break;
     console.log('ADVICE:   candidate ' + t.mm.toFixed(1) + 'mm  [' + t.prio + '] ' + t.key.slice(5));
   }
-  console.log('ADVICE: cut order - prose restating a formula, then why-it-matters sentences, then a');
-  console.log('ADVICE: second proof sentence, then off-syllabus enrichment. Or raise --pages.');
+  console.log('ADVICE: cut order - statement lines FIRST (lowest priority: a judgement line is worth');
+  console.log('ADVICE: less than the formula or the example it refers to), then prose restating a formula,');
+      console.log('ADVICE: then why-it-matters sentences. Never cut a ★★★ formula or a worked-example step.');
   process.exit(1);
 }
 
