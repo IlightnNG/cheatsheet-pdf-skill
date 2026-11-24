@@ -1,7 +1,7 @@
 // embed-fonts.js - inline KaTeX's woff2 fonts into its CSS as data: URLs, so the sheet
 // renders real math with no network and no file-path resolution problems.
 //
-//   node embed-fonts.js <katex-dist-dir> <out-css>
+//   node embed-fonts.js <katex-dist-dir> <out-css>`n//`n// Maintenance only: vendor/katex-fonts.css is generated once per KaTeX upgrade and committed,`n// so a normal render never runs this.
 //
 // Reads <dist>/katex.min.css and <dist>/fonts/*.woff2, writes a single self-contained CSS.
 // Run once per KaTeX version; the output is reused by build.js.

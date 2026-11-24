@@ -116,7 +116,7 @@ into errors for a team that must match exactly.
 | Sections | `## ★★★ N.M Title`, M sequential inside the chapter |
 | Section content | ≥ 1 block (`$$`, table, bullets) rather than paragraphs |
 | Order inside a chapter | formulas → statements → worked examples |
-| Priority when full | formulas > worked examples > statements (cut statements first) |
+| Priority when full | formulas/theorems > past papers > drills > statements — complete the formula coverage first, cut from the bottom |
 | ★★★ share | 76 % of sections |
 | Formula blocks | ≥ 6 per chapter (average 3.6 per section) |
 | Statements to judge | exactly one per chapter, 5–7 bullets with `==keywords==` |

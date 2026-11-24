@@ -13,6 +13,7 @@ wrong on purpose, and the point of the test is that the guard still catches it.
 | `drill-prose.md` | a "drill" that is a prose recap with no data | `STYLE WARN skeleton ... carries almost no numbers` |
 | `drill-table.md` | a drill laid out as a table | `STYLE WARN shape ... is built on a table` |
 | `drill-duplicate.md` | a drill that recomputes the exam's formula | `STYLE WARN duplicate ... repeats formula(s)` |
+| `thin-coverage.md` | a knowledge section with one formula | `STYLE WARN coverage ... carries 1 formula(s)` |
 
 Run them with `npm run test:guards` (about a second, no browser).
 

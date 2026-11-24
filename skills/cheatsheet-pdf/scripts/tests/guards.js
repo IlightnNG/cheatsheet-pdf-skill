@@ -92,6 +92,13 @@ const cases = [
     expect: /no formula drill/,
   },
   {
+    name: 'a thin knowledge section is reported',
+    file: 'thin-coverage.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /carries 1 formula\(s\)/,
+  },
+  {
     name: 'a drill that repeats the exam formula is reported',
     file: 'drill-duplicate.md',
     run: 'style',

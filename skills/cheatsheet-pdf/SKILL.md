@@ -13,6 +13,16 @@ Two stages. You author the Markdown; one command renders and checks it.
 - **B. Render** it: `cheatsheet.js` lints, fits it to the requested pages, and prints it;
   `verify.js` checks the result.
 
+**Map of this page.**
+
+| Stage A — author | Stage B — render | Reference |
+|---|---|---|
+| What every chapter contains | the flag tables | the specimen, the fixtures |
+| Two kinds of example (paper vs drill) | lint / style / theme stages | the guard tests |
+| Highlight the names | the `ADVICE:` lines | — |
+| Priority when the page is full | base=auto, preview | — |
+| Work in rounds | — | — |
+
 The hard part is **capacity**, not markup: a fixed page area must hold an elastic amount of
 content. A good sheet comes from choosing well and then fitting it — in that order.
 
@@ -190,16 +200,29 @@ chapter a reader cannot scan. `==name==` and a raw `<mark>name</mark>` both coun
 
 ### Priority when the page is full
 
-The three block types have a fixed priority; when the sheet overflows, cut from the bottom:
+Inside a chapter the four block types have a fixed priority. **Coverage comes first**: the formulas
+and theorems must cover every subsection and every examinable result before any space goes to an
+example, and only then to statements.
 
-| Rank | Block | When cutting |
+| Rank | Block | When the page is tight |
 |---|---|---|
-| 1 | formulas and theorems (`$$`, tables of cases) | never cut; shorten prose around them |
-| 2 | worked examples (past paper and drill) | keep the substitution steps; cut the framing sentence |
-| 3 | `Statements to judge` | **cut first**: drop the least examinable lines, or shorten each to one clause |
+| 1 | formulas and theorems (`$$`, tables of cases) | complete the chapter's coverage first; never cut |
+| 2 | past papers (`20xx Qn — …`) | keep the parts and the `> **Key**` |
+| 3 | drills (`Worked example — …`) | cut before a past paper |
+| 4 | `Statements to judge` | **cut first**: drop the least examinable lines, or shorten each to one clause |
 
-`paginate-pages.js` prints the same order in its `ADVICE:` line, and the section-level candidates it
-lists are ranked by star, so a `★` statements section is the first thing it suggests.
+`style.js` reports the chapters whose knowledge looks thin ("averages N formula block(s) per
+knowledge section", "chapter N has only M formula block(s) in total"), because that is a gap no
+amount of examples can hide. `paginate-pages.js` prints the same order in its `ADVICE:` line
+(statements, then a drill, then a past paper, never a formula).
+
+The practical loop:
+
+1. **complete the formulas** of the chapter — every subsection, every result that could be asked;
+2. add the **past paper**;
+3. add a **drill** for a formula the paper does not use;
+4. add the **statements**;
+5. when it overflows, remove from the bottom of the list.
 
 ### Work in rounds, never in one pass
 
@@ -239,19 +262,18 @@ paper too.
    cases (`d=1` when a column is zero, `d≥2` without a zero column, …), give it its own `$$`/table
    block under the chapter's formulas, then let the example refer to it.
 
-### Compression order
+### Trimming inside a block
 
-When it does not fit — stop as soon as it fits, and cut in this order:
+Once the section-level cuts are done (statements, then a drill, then a past paper), shrink what is
+left without losing a formula:
 
-1. **statement lines** — the lowest priority block: drop the least examinable claims, or shorten each
-   to one clause (a judgement line is worth less than the formula or example it refers to),
-2. prose that restates the formula,
-3. sentences about why a result matters (keep `*Meaning:*`),
-4. second sentences inside proof sketches (keep the step the examiner asks for),
-5. off-syllabus enrichment.
+1. a statement line: keep the claim, drop the clause that explains it;
+2. prose that restates the formula;
+3. sentences about why a result matters (keep `*Meaning:*`);
+4. a second sentence inside a proof sketch (keep the step the examiner asks for);
+5. a drill's *Scenario* sentence (never its arithmetic).
 
-**Never** delete a formula block, and never the substitution step of a worked example. A drill may
-lose its *Scenario* sentence, not its arithmetic.
+**Never** delete a formula block, and never the substitution step of a worked example.
 
 ### Two Markdown hazards
 

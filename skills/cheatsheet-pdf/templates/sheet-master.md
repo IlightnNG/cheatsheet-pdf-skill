@@ -15,7 +15,7 @@ $$!CORE FORMULA$$
 
 *Pf.* <one-line derivation>. *Meaning:* ==<name of the result>== — <the sentence worth reproducing in an exam answer>.
 
-$$STANDARD FORMULA \qquad \text{(<name>)}
+$$STANDARD FORMULA \qquad \text{(<name>)}$$
 
 $$?SUPPORTING FORMULA$$
 
@@ -26,6 +26,10 @@ $$?SUPPORTING FORMULA$$
 $$!RESULT$$
 
 *Meaning:* ==<name>== — <one sentence>.
+
+$$STANDARD RESULT$$
+
+$$?RESTRICTION OR SPECIAL CASE$$
 
 | What you see | What it rules out | Consequence |
 |---|---|---|
@@ -70,15 +74,25 @@ $$STANDARD FORMULA$$
 
 $$?SUPPORTING FORMULA$$
 
-- <the one fact that does not fit a formula box>.
+- <the one fact that does not fit a formula box, with its $inline$ formula>.
 
-## ★★★ 2.2 STATEMENTS TO JUDGE (one line each)
+## ★★★ 2.2 A SECOND RESULT
+
+$$!RESULT$$
+
+*Meaning:* ==<name>== — <one sentence>.
+
+$$STANDARD RESULT$$
+
+$$?SPECIAL CASE$$
+
+## ★★★ 2.3 STATEMENTS TO JUDGE (one line each)
 
 - <claim> — ==<keyword>==.
 - <claim> — ==<keyword>==.
 - <claim> — ==<keyword>==.
 
-## ★★★ 2.3 2023 Q4 — <short title> (10 marks)
+## ★★★ 2.4 2023 Q4 — <short title> (10 marks)
 
 *Q.* <stem>.
 
@@ -87,7 +101,7 @@ $$?SUPPORTING FORMULA$$
 
 > **Key** — <the sentence>.
 
-## ★★★ 2.4 Worked example — <second scenario> with numbers
+## ★★★ 2.5 Worked example — <second scenario> with numbers
 
 *Data.* <one line: the numbers the drill uses, e.g. n = 7, d = 3>.
 
@@ -97,6 +111,11 @@ $$?SUPPORTING FORMULA$$
 
 <!--
 Self-check before rendering - every box must be ticked:
+  [ ] PRIORITY per chapter: formulas/theorems > past papers > drills > statements. Complete the
+      formula coverage of the chapter FIRST (every subsection, every examinable result, 6+ blocks),
+      then the past paper, then a drill for a formula the paper does not use, then the statements.
+  [ ] when the page overflows, cut in the reverse order: statements first, then drills, then past
+      papers - never a formula
   [ ] ONLY chapters use "#" (plus the title): no "# Appendix", "# Quiz", "# Extra" after the last
       chapter - they render as chapter bars and read as filler
   [ ] every chapter carries: formula sections (>= 6 blocks), its own STATEMENTS section (5-7 lines,
@@ -105,9 +124,9 @@ Self-check before rendering - every box must be ticked:
       only in the statements list) - that is how a reader finds them while scanning
   [ ] drills are PLAIN TEXT, not tables: one *Data.* line, then each formula as a chained equality
       (formula = substitution = value). A table cannot split across a column and costs the layout.
+  [ ] a drill never recomputes a formula the chapter's past paper already used
   [ ] drill only the formulas that are important AND examinable; 3-6 lines each, several small
       drills beat one long one
-  [ ] exam sections stay short too: the parts, the numbers, one > **Key**
   [ ] every section heading carries a star run, numbering N.M with N = its chapter, M sequential
   [ ] chapter order follows the syllabus; INSIDE a chapter it is formulas -> statements -> examples
   [ ] every section is made of blocks ($$ formulas, tables, bullets) - no section is a paragraph
@@ -118,7 +137,6 @@ Self-check before rendering - every box must be ticked:
   [ ] emphasis may span inline math; it may NOT span a blank line
   [ ] build in rounds: coverage first (all formulas), then statements + examples per chapter,
       then measure (the --audit table), then deepen the thin chapter - never append filler
-  [ ] when the page overflows, cut STATEMENTS first, then prose; never a formula or a drill step
   [ ] layout knobs are free: --cols/--base/--gap may be passed; the defaults reproduce the specimen
   [ ] colour/boxes/dividers/typeface are theme tokens: leave them alone unless you also pass
       --theme=any, which tells the checks the new look is deliberate

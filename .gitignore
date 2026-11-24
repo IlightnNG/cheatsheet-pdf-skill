@@ -3,6 +3,7 @@
 .cheatsheet/
 .preview-profile/
 *.p[0-9].png
+examples/fixtures/*.pdf
 
 # ── node ─────────────────────────────────────────────────────────────────────────────────
 node_modules/

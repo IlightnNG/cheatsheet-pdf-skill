@@ -74,6 +74,7 @@ lines.forEach((l, i) => {
   if (commentDepth > 0) { if (/-->/.test(l)) commentDepth -= 1; return; }
   const t = l.trim();
   sec.chars += l.length;
+  if (/\$[^$\n]+\$/.test(l) && !/^\$\$/.test(t)) sec.mathLines = (sec.mathLines || 0) + 1;
   sec.math = (sec.math || []).concat([...l.matchAll(/\$\$[!?]?[\s\S]*?\$\$|\$[^$\n]*?\$/g)].map((m) => m[0]));
   sec.digits = (sec.digits || 0) + (t.match(/\d/g) || []).length;
   sec.marks = (sec.marks || 0) + (t.match(/==[^=\n]+==/g) || []).length + (t.match(/<mark>/g) || []).length;
@@ -105,6 +106,13 @@ for (const s of secs) {
       'uses formula boxes, tables or bullets (this still prints, it just will not look like the specimen)', true);
   }
   if (s.formulas > 12) add('shape', 'section "' + s.title + '" has ' + s.formulas + ' formula blocks (reference max 9) - consider splitting it', false);
+  if (!s.statements && !s.exam && !s.drill) {
+    const carried = s.formulas + (s.mathLines || 0);
+    if (carried < 2) {
+      add('coverage', 'knowledge section "' + s.title + '" carries ' + carried + ' formula(s) - a topic needs ' +
+        'at least 2; the formula coverage is the first thing to complete', false);
+    }
+  }
   if (s.bullets > 10) add('shape', 'section "' + s.title + '" has ' + s.bullets + ' bullets - consider splitting it', false);
   if (s.chars > 2200) add('length', 'section "' + s.title + '" is ' + s.chars + ' chars (reference ~670) - it will dominate the page', false);
 }
@@ -121,6 +129,16 @@ for (const c of chapters) {
   }
   if (stmtIdx >= 0 && kinds.slice(stmtIdx).some((k) => k === 'formula')) {
     add('order', 'chapter ' + c.n + ': a formula section comes after the statements section', true);
+  }
+  const knowledge = c.sections.filter((s) => !s.statements && !s.exam && !s.drill);
+  if (c.formulas < 6) {
+    add('coverage', 'chapter ' + c.n + ' has only ' + c.formulas + ' formula block(s) in total - complete the ' +
+      'knowledge before spending space on examples', false);
+  }
+  const perKnowledge = knowledge.length ? c.formulas / knowledge.length : 0;
+  if (knowledge.length && perKnowledge < 3) {
+    add('coverage', 'chapter ' + c.n + ' averages ' + perKnowledge.toFixed(1) + ' formula block(s) per knowledge ' +
+      'section - the topic coverage looks thin; complete the formulas before adding examples', false);
   }
   const stmt = c.sections.filter((s) => s.statements);
   const exams = c.sections.filter((s) => s.exam);

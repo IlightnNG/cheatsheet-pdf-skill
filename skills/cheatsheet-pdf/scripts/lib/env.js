@@ -96,11 +96,6 @@ function fileUrl(p, bust) {
   return bust ? u + '?v=' + Date.now() : u;
 }
 
-function ensureWork() {
-  fs.mkdirSync(WORK, { recursive: true });
-  return WORK;
-}
-
 module.exports = {
-  ASSETS, WORK, chromePath, tempRoot, profile, baseArgs, timeoutMs, fileUrl, ensureWork, isFile
+  ASSETS, WORK, chromePath, tempRoot, profile, baseArgs, timeoutMs, fileUrl, isFile
 };

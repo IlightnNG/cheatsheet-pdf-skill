@@ -245,10 +245,13 @@ const rank = (p) => ({ p0: 0, p1: 1, p2: 2, p3: 3 }[p] === undefined ? 9 : { p0:
 // A "Statements to judge" section outranks nothing: it is the first thing to cut, so it is listed
 // before even the ☆ sections. A judgement line is worth less than the formula or the example it
 // refers to; the same order is documented in SKILL.md.
-const isStmt = (k) => /statements to judge/i.test(k) ? 1 : 0;
+// 0 statements, 1 drill, 2 past paper, 3 plain formula section (never cut).
+const kind = (k) => (/statements to judge/i.test(k) ? 0
+  : /work(ed)?\s+example|formula\s+drill|scenario/i.test(k) ? 1
+  : /20\d\d\s*Q\d/i.test(k) ? 2 : 3);
 const trim = [...sections.entries()]
   .map(([k, h]) => ({ key: k, prio: k.slice(0, 2), mm: h / 96 * 25.4 }))
-  .sort((a, b) => (isStmt(b.key) - isStmt(a.key)) || (rank(a.prio) - rank(b.prio)) || (b.mm - a.mm));
+  .sort((a, b) => (kind(a.key) - kind(b.key)) || (rank(a.prio) - rank(b.prio)) || (b.mm - a.mm));
 fs.writeFileSync(path.join(dir, 'pages.json'), JSON.stringify({
   pages: pages.length, asked: PAGES, filled: cuts.length, cols: NCOL, cuts: cuts, overflow: overflow,
   sections: trim.slice(0, 20)
@@ -273,7 +276,7 @@ if (overflow) {
   console.log('ADVICE: content does not fit ' + PAGES + ' page(s) - page ' + overflow.page +
               ' needs ' + overflow.needed.toFixed(2) + ' of ' + overflow.have + ' columns.');
   console.log('ADVICE: free about ' + needMm + 'mm of column height, lowest priority first:' +
-              ' cut the Statements section first, then ☆ and ★ sections before ★★, and never a ★★★ formula or a drill step.');
+              ' cut the Statements section first, then a drill, then a past paper - and never a formula.');
   for (const t of trim.slice(0, 5)) {
     if (rank(t.prio) === 3) break;
     console.log('ADVICE:   candidate ' + t.mm.toFixed(1) + 'mm  [' + t.prio + '] ' + t.key.slice(5));
