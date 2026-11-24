@@ -11,6 +11,7 @@ wrong on purpose, and the point of the test is that the guard still catches it.
 | `markup.md` | `__bold__`, `~~strike~~`, a box-drawing stroke, an escaped table pipe | four `LINT ERROR`s |
 | `exams-only.md` | a past paper but no formula drill | `STYLE WARN skeleton ... no formula drill` |
 | `drill-prose.md` | a "drill" that is a prose recap with no data | `STYLE WARN skeleton ... carries almost no numbers` |
+| `drill-table.md` | a drill laid out as a table | `STYLE WARN shape ... is built on a table` |
 
 Run them with `npm run test:guards` (about a second, no browser).
 

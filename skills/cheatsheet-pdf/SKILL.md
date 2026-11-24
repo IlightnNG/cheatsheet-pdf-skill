@@ -143,43 +143,44 @@ If a topic does not fit, it belongs in a chapter; if it does not belong to a cha
 
 ### Two kinds of example (both belong in a chapter)
 
-A past-paper question proves the topic was examined; a **drill** teaches the arithmetic. They are
-not the same shape, and the drill is the denser of the two:
-
-| Kind | Title | Shape |
-|---|---|---|
-| past paper | `20xx Qn — <topic> (N marks)` | the original parts, one `> **Key**` |
-| **drill** | `Worked example — <topic> with numbers` | **one dataset, several related formulas in a row**, no parts, no theory |
-
-A drill is a **class of computation**, not a single question: hand it one table or matrix and walk
-*all* the formulas of the section on that data. That is what raises formula coverage while using
-less space than a second exam question.
+A past-paper question proves the topic was examined; a **drill** teaches the arithmetic. A chapter
+can carry **one past paper and one to three small drills** — each drill on its own scenario, only
+for the formulas that are important *and* examinable. Both must stay short: a past paper is the
+parts and one `> **Key**`; a drill is 3–6 lines.
 
 ```markdown
 ## ★★★ 1.6 Worked example — four entropies on one joint table
 
 *Data.* P_XY: (0,0)=1/2, (0,1)=1/4, (1,0)=1/4, (1,1)=0.
 
-| formula | with the numbers | value |
-|---|---|---|
-| P_X, P_Y | column/row sums | (3/4, 1/4) |
-| H(X) = -Σ p log p | -(3/4 log 3/4 + 1/4 log 1/4) | 0.811 |
-| H(XY) | 1/2·1 + 2·(1/4·2) | 1.500 |
-| I(X:Y) = H(X)+H(Y)-H(XY) | 0.811 + 0.811 - 1.500 | 0.123 |
-| H_min(X|Y) = -log p_guess | p_guess = 3/4·2/3 + 1/4·1 | 0.415 |
+- H(X) = -Σ p log p = -(3/4 log 3/4 + 1/4 log 1/4) = 0.811
+- H(XY) = 1/2·1 + 2·(1/4·2) = 1.500
+- I(X:Y) = H(X) + H(Y) - H(XY) = 0.811 + 0.811 - 1.500 = 0.123
 ```
 
-Rules that make it worth the space:
+Rules that make a drill worth the space:
 
-- **one dataset for the whole drill** — a table or a matrix at the top, then every formula reads
-  from it; a second dataset doubles the space and teaches nothing new;
-- **numbers that divide cleanly** (halves, quarters, 2^n) so the reader can follow without a
-  calculator; write the intermediate value, never just the answer;
-- **end with the formula an exam would actually ask for** (here `I(X:Y)`), so the last line is the
-  one to remember;
-- 4–6 formulas in a drill is normal; prose is capped at the one-line *Data.* and a trailing
-  sanity check ("at ε = 1/2 the capacity is 0, as expected").
-- a drill **must contain data**: `style.js` reports one that carries almost no numbers.
+- **plain text, never a table.** A table cannot split across a column and is the most common source
+  of layout trouble; one line per formula (`formula = substitution = value`) is denser and safer.
+- **data first, on one line** (*Data.*), then every formula reads from it; a second dataset starts a
+  second drill, not a longer one.
+- **numbers that divide cleanly** (halves, quarters, 2^n); write the intermediate value, never only
+  the answer.
+- **end with the formula an exam would ask for**, so the last line is the one to remember.
+- prose is capped at the `*Data.*` line and one trailing check ("at ε = 1/2 the capacity is 0").
+- a drill **must contain data**: `style.js` reports one that carries almost no numbers, and one built
+  on a table.
+
+### Highlight the names
+
+The yellow highlight is for **finding things**, not for decoration. Use `==name==` on:
+
+- the **name of every important formula/theorem**, inside the knowledge section — `==Kraft inequality==`,
+  `==Fano==`, `==Hamming bound==`, `==separation theorem==`;
+- the 1–2 keywords of each statement line.
+
+`style.js` reports a chapter whose knowledge sections highlight no name, because that is exactly the
+chapter a reader cannot scan. `==name==` and a raw `<mark>name</mark>` both count.
 
 ### Priority when the page is full
 

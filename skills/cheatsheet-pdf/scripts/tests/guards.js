@@ -92,6 +92,13 @@ const cases = [
     expect: /no formula drill/,
   },
   {
+    name: 'a drill built on a table is reported',
+    file: 'drill-table.md',
+    run: 'style',
+    expectCode: 0,
+    expect: /is built on a table/,
+  },
+  {
     name: 'a drill without data is reported',
     file: 'drill-prose.md',
     run: 'style',

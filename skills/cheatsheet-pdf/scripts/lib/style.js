@@ -28,7 +28,7 @@ const add = (kind, msg, structural) =>
 
 // ---- parse
 const chapters = [];
-let cur = null, sec = null;
+let cur = null, sec = null, commentDepth = 0;
 const closeSec = () => { if (sec && cur) cur.sections.push(sec); sec = null; };
 
 lines.forEach((l, i) => {
@@ -53,9 +53,14 @@ lines.forEach((l, i) => {
     return;
   }
   if (!sec) return;
+  // A <!-- ... --> block is authoring notes, not sheet content: it must not inflate the section.
+  if (/^\s*<!--/.test(l)) { commentDepth += 1; return; }
+  if (commentDepth > 0) { if (/-->/.test(l)) commentDepth -= 1; return; }
   const t = l.trim();
   sec.chars += l.length;
   sec.digits = (sec.digits || 0) + (t.match(/\d/g) || []).length;
+  sec.marks = (sec.marks || 0) + (t.match(/==[^=\n]+==/g) || []).length + (t.match(/<mark>/g) || []).length;
+  if (sec.drill && /^\|/.test(t)) sec.drillTables = (sec.drillTables || 0) + 1;
   if (/^\$\$[!?]?/.test(t)) { sec.formulas++; if (cur) cur.formulas++; }
   else if (/^- /.test(t) || /^\d+\.\s/.test(t)) sec.bullets++;
   else if (/^\|/.test(t)) sec.tables++;
@@ -108,14 +113,17 @@ for (const c of chapters) {
       'they do not belong in one block after the last chapter', true);
   }
   const drills = c.sections.filter((s) => s.drill);
-  if (!drills.length && c.sections.some((s) => s.exam)) {
-    add('skeleton', 'chapter ' + c.n + ' has past-paper questions but no formula drill - add ' +
-      '"## ★★★ N.x Worked example — <formula> with numbers" showing the arithmetic step by step', false);
-  }
   for (const d of drills) {
     if ((d.digits || 0) < 3) {
       add('skeleton', 'drill "' + d.title + '" carries almost no numbers (' + (d.digits || 0) +
         ' digit(s)) - a drill is a data walk-through: one dataset, then each formula with the values substituted', false);
+    }
+  }
+  for (const d of drills) {
+    if ((d.drillTables || 0) > 1) {
+      add('shape', 'drill "' + d.title + '" is built on a table - write the data on one line and then ' +
+        'each formula as a chained equality (formula = substitution = value); a table cannot split ' +
+        'across a column and costs the layout', false);
     }
   }
   if (!c.sections.some((s) => s.example)) {
@@ -127,6 +135,18 @@ for (const c of chapters) {
     if (!e.marks) add('exam', 'past-paper section "' + e.title + '" does not say "(N marks)"', false);
     if (e.formulas > 3) add('exam', 'past-paper section "' + e.title + '" carries ' + e.formulas + ' formula blocks - the reference keeps the steps as bullets', false);
   }
+}
+
+// Aggregate, not per chapter: eight identical warnings bury the one that matters.
+const noDrill = chapters.filter((c) => !c.sections.some((s) => s.drill) && c.sections.some((s) => s.exam)).map((c) => c.n);
+if (noDrill.length) {
+  add('skeleton', 'chapter(s) ' + noDrill.join(', ') + ' have past papers but no formula drill - a drill is ' +
+    'a data walk-through: one dataset, then each formula as a chained equality', false);
+}
+const noMark = chapters.filter((c) => !c.sections.some((s) => !s.statements && (s.marks || 0) > 0)).map((c) => c.n);
+if (noMark.length) {
+  add('highlight', 'chapter(s) ' + noMark.join(', ') + ' highlight no name - wrap the formula/theorem names in ' +
+    '==name== (or <mark>) inside the formula/theorem section, so a reader can find them while scanning', false);
 }
 
 // ---- star mix
